@@ -1,0 +1,90 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="源文件">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="头文件">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="资源文件">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="头文件\config">
+      <UniqueIdentifier>{a4b293c1-1c9a-499e-8f40-a80130a200de}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="头文件\DataStruct">
+      <UniqueIdentifier>{918eb55c-89e0-41b8-9296-8f16696c7b40}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\config">
+      <UniqueIdentifier>{376e4a2b-f6ff-4357-9088-fab3f2b4050a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="头文件\util">
+      <UniqueIdentifier>{1c5750cf-cd24-4d2d-9e6a-c73a591bd12e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\util">
+      <UniqueIdentifier>{ba20488c-5560-4400-8f51-843a005a6280}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\DataStruct">
+      <UniqueIdentifier>{7048be0c-d0c1-432c-9b6c-578f9c6e588c}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="init_mysql.h">
+      <Filter>头文件\config</Filter>
+    </ClInclude>
+    <ClInclude Include="init_redis.h">
+      <Filter>头文件\config</Filter>
+    </ClInclude>
+    <ClInclude Include="init_socket.h">
+      <Filter>头文件\config</Filter>
+    </ClInclude>
+    <ClInclude Include="change_character_set.h">
+      <Filter>头文件\util</Filter>
+    </ClInclude>
+    <ClInclude Include="get_route.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="vehicle.h">
+      <Filter>头文件\DataStruct</Filter>
+    </ClInclude>
+    <ClInclude Include="user_requirement.h">
+      <Filter>头文件\DataStruct</Filter>
+    </ClInclude>
+    <ClInclude Include="route_result.h">
+      <Filter>头文件\DataStruct</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="init_mysql.cpp">
+      <Filter>源文件\config</Filter>
+    </ClCompile>
+    <ClCompile Include="init_redis.cpp">
+      <Filter>源文件\config</Filter>
+    </ClCompile>
+    <ClCompile Include="init_socket.cpp">
+      <Filter>源文件\config</Filter>
+    </ClCompile>
+    <ClCompile Include="change_character_set.cpp">
+      <Filter>源文件\util</Filter>
+    </ClCompile>
+    <ClCompile Include="get_route.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="vehicle.cpp">
+      <Filter>源文件\DataStruct</Filter>
+    </ClCompile>
+    <ClCompile Include="user_requirement.cpp">
+      <Filter>源文件\DataStruct</Filter>
+    </ClCompile>
+    <ClCompile Include="route_result.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="TravelRouteRecommendSystem.cpp">
+      <Filter>源文件\DataStruct</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

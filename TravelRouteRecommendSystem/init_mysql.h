@@ -20,7 +20,7 @@ private:
 	/*
 		关闭当前的db 可以和resetGlobleMySQL配合使用
 	*/
-	static int closeGlobleMySQL();
+	static CloseStatue closeGlobleMySQL();
 public:
 	InitMySQL();
 	/*
@@ -32,7 +32,7 @@ public:
 		*port 端口号
 		*character_set 字符集 c++默认 gbk 而数据库一般默认utf-8 不设置会出现乱码
 	*/
-	static int initGlobleMySQL(string host, string user_name, string password, string database_name,int port,string character_set="gbk");
+	static InitStatue initGlobleMySQL(string host, string user_name, string password, string database_name,int port,string character_set="gbk");
 
 	/*
 		重新设置mysql实例

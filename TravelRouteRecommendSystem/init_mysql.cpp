@@ -1,9 +1,12 @@
+#include<iostream>
 #include<mysql.h>
 #include<string>
 #include "init_mysql.h"
 using std::string;
 namespace DBStatus
 {
+	
+	using InitStatue = int;
 	//初始化时的状态枚举
 	enum InitStatus
 	{
@@ -13,17 +16,65 @@ namespace DBStatus
 		INIT_DB_OBJECT_FAILED,
 		INIT_MYSQL_OPITION_FAILED,
 	};
+	const string INIT_MYSQL_FAILED_STR = "INIT_MYSQL_FAILED";
+	const string INIT_MYSQL_LIBRARY_FAILED_STR = "INIT_MYSQL_LIBRARY_FAILED";
+	const string INIT_DB_OBJECT_FAILED_STR = "INIT_DB_OBJECT_FAILED";
+	const string INIT_MYSQL_OPITION_FAILED_STR = "INIT_MYSQL_OPITION_FAILED";
+
+	using CloseStatue = int;
 	//关闭数据库时的状态枚举
 	enum CloseStatus
 	{
 		CLOSE_FAILED=0,
 		CLOSE_SUCCEED
 	};
+	const string CLOSE_FAILED_STR = "CLOSE_MYSQL_FAILED";
 
 	enum CURDStatus
 	{
 
 	};
+	/*
+		处理初始化mysql时的错误 只输出错误代码 不输出正确
+		*statue_code 初始化的状态码 为INIT_MYSQL_SUCCEED return true 其余false
+	*/
+	bool dealInitMySQLError(InitStatue statue_code)
+	{
+		switch (statue_code)
+		{
+		case DBStatus::INIT_MYSQL_FAILED:
+			std::cout << INIT_MYSQL_FAILED_STR << "\n";
+			return false;
+			break;
+		case DBStatus::INIT_MYSQL_LIBRARY_FAILED:
+			std::cout << INIT_MYSQL_LIBRARY_FAILED_STR << "\n";
+			return false;
+			break;
+		case DBStatus::INIT_DB_OBJECT_FAILED:
+			std::cout << INIT_DB_OBJECT_FAILED_STR << "\n";
+			return false;
+			break;
+		case DBStatus::INIT_MYSQL_OPITION_FAILED:
+			std::cout << INIT_MYSQL_OPITION_FAILED_STR << "\n";
+			return false;
+			break;
+		}
+		return true;
+	}
+	
+	/*
+		处理关闭mysql时的错误
+		*statue_code 关闭的状态码
+	*/
+	bool dealCloseSQLError(CloseStatue statue_code)
+	{
+		if (statue_code == CLOSE_FAILED)
+		{
+			std::cout << CLOSE_FAILED_STR << "\n";
+			return false;
+		}
+		return true;
+	}
 }
 using namespace DBStatus;
 
@@ -31,7 +82,7 @@ InitMySQL::InitMySQL()
 {
 }
 
-int InitMySQL::initGlobleMySQL(string host, string user_name, string password, string database_name, int port, string character_set = "gbk")
+InitStatue InitMySQL::initGlobleMySQL(string host, string user_name, string password, string database_name, int port, string character_set = "gbk")
 {
 	if (mysql_library_init(0, NULL, NULL) != 0)
 	{
@@ -52,7 +103,7 @@ int InitMySQL::initGlobleMySQL(string host, string user_name, string password, s
 	return INIT_MYSQL_FAILED;
 }
 
-int InitMySQL::closeGlobleMySQL()
+CloseStatue InitMySQL::closeGlobleMySQL()
 {
 	
 	if (&db)

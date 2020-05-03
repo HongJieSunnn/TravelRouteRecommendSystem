@@ -1,3 +1,4 @@
+#include<iostream>
 #include<hiredis.h>
 #include<string>
 #include "init_redis.h"
@@ -12,6 +13,51 @@ namespace RedisStatus
 	//读写redis时返回的类型 为6时 即读或写出现ERROR
 	//即redis_reply->type
 	using RedisReplyType = int;
+
+	/*
+		处理初始化redis实例时的错误
+		*statue_code 错误代码
+	*/
+	bool dealInitRedisError(RedisContextErr statue_code)
+	{
+		switch (statue_code)
+		{
+		case REDIS_ERR_IO:
+			std::cout << "REDIS_ERR_IO_FAILD"<<"\n";
+			return false;
+			break;
+		case REDIS_ERR_EOF:
+			std::cout << "REDIS_ERR_EOF_FAILD" << "\n";
+			return false;
+			break;
+		case REDIS_ERR_PROTOCOL:
+			std::cout << "REDIS_ERR_PROTOCOL_FAILD" << "\n";
+			return false;
+			break;
+		case REDIS_ERR_OOM:
+			std::cout << "REDIS_ERR_OOM_FAILD" << "\n";
+			return false;
+			break;
+		case REDIS_ERR_OTHER:
+			std::cout << "REDIS_ERR_OTHER_FAILD" << "\n";
+			return false;
+			break;
+		}
+		return true;
+	}
+	/*
+		处理获取reply时的错误
+		*statue_code 错误代码
+	*/
+	bool dealGetRedisReplyError(RedisReplyType statue_code)
+	{
+		if (statue_code == REDIS_REPLY_ERROR)
+		{
+			std::cout << "REDIS_REPLY_ERROR" << "\n";
+			return false;
+		}
+		return true;
+	}
 }
 using namespace RedisStatus;
 

@@ -1,7 +1,5 @@
 #ifndef INITMYSQL_H
 #define INITMYSQL_H
-#include<string>
-using std::string;
 /*
 由于该项目需要使用到mysql数据库 所以需要初始化一个全局的mysql对象用来对数据库进行操作
 在main函数里调用构造函数初始化数据库 然后就可以直接使用
@@ -9,7 +7,7 @@ using std::string;
 用例
 int main()
 {
-	InitMySQL::initGlobleMySQL("127.0.0.1","root","password","database_name",3306,*"gbk"(可省略)*)
+	InitMySQL::initGlobleMySQL("127.0.0.1","root","password","database_name",3306,*"gbk"(可省略)*);
 }
 */
 class InitMySQL

@@ -1,5 +1,7 @@
 #include<mysql.h>
+#include<string>
 #include "init_mysql.h"
+using std::string;
 namespace DBStatus
 {
 	//初始化时的状态枚举

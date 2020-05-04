@@ -1,8 +1,7 @@
 #ifndef CHANGECHARACTERSET_H
 #define CHANGECHARACTERSET_H
-#include<string>
-using std::string;
 //一个类 用来转换字符集 因为go是utf-8而c++是gkb 所以需要转换字符集 才能正确交互数据
+//TODO 其实我感觉可以不用这么麻烦
 class ChangeCharacterSet
 {
 public:

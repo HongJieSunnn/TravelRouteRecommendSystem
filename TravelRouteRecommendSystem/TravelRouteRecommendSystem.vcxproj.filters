@@ -39,9 +39,6 @@
     <ClInclude Include="init_redis.h">
       <Filter>头文件\config</Filter>
     </ClInclude>
-    <ClInclude Include="init_socket.h">
-      <Filter>头文件\config</Filter>
-    </ClInclude>
     <ClInclude Include="change_character_set.h">
       <Filter>头文件\util</Filter>
     </ClInclude>
@@ -57,15 +54,15 @@
     <ClInclude Include="route_result.h">
       <Filter>头文件\DataStruct</Filter>
     </ClInclude>
+    <ClInclude Include="my_time.h">
+      <Filter>头文件\util</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="init_mysql.cpp">
       <Filter>源文件\config</Filter>
     </ClCompile>
     <ClCompile Include="init_redis.cpp">
-      <Filter>源文件\config</Filter>
-    </ClCompile>
-    <ClCompile Include="init_socket.cpp">
       <Filter>源文件\config</Filter>
     </ClCompile>
     <ClCompile Include="change_character_set.cpp">
@@ -85,6 +82,9 @@
     </ClCompile>
     <ClCompile Include="TravelRouteRecommendSystem.cpp">
       <Filter>源文件\DataStruct</Filter>
+    </ClCompile>
+    <ClCompile Include="my_time.cpp">
+      <Filter>源文件\util</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

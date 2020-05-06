@@ -23,7 +23,7 @@
     <ClCompile Include="get_route.cpp" />
     <ClCompile Include="init_mysql.cpp" />
     <ClCompile Include="init_redis.cpp" />
-    <ClCompile Include="init_socket.cpp" />
+    <ClCompile Include="my_time.cpp" />
     <ClCompile Include="route_result.cpp" />
     <ClCompile Include="TravelRouteRecommendSystem.cpp" />
     <ClCompile Include="user_requirement.cpp" />
@@ -34,7 +34,7 @@
     <ClInclude Include="get_route.h" />
     <ClInclude Include="init_mysql.h" />
     <ClInclude Include="init_redis.h" />
-    <ClInclude Include="init_socket.h" />
+    <ClInclude Include="my_time.h" />
     <ClInclude Include="route_result.h" />
     <ClInclude Include="user_requirement.h" />
     <ClInclude Include="vehicle.h" />

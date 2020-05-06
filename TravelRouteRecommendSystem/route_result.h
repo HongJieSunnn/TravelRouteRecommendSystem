@@ -4,6 +4,8 @@
 
 class RouteResult
 {
+public:
+	static char* remark;
 };
 
 #endif // !ROUTERESULT_H

@@ -70,9 +70,10 @@ private:
 	static redisContext* redis_context;
 	//获得对redis实例执行redis语句的结果
 	static redisReply* redis_reply;
-public:
+	//无法创建对象
 	InitRedis();
-
+public:
+	
 	/*
 		初始化静态变量redis_context
 		返回值是RedisContextErr 实际是int 

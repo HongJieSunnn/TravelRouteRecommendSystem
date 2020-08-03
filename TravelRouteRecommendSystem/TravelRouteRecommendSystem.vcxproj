@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClCompile Include="change_character_set.cpp" />
     <ClCompile Include="get_route.cpp" />
+    <ClCompile Include="graph.cpp" />
     <ClCompile Include="init_mysql.cpp" />
     <ClCompile Include="init_redis.cpp" />
     <ClCompile Include="my_time.cpp" />
@@ -32,6 +33,7 @@
   <ItemGroup>
     <ClInclude Include="change_character_set.h" />
     <ClInclude Include="get_route.h" />
+    <ClInclude Include="graph.h" />
     <ClInclude Include="init_mysql.h" />
     <ClInclude Include="init_redis.h" />
     <ClInclude Include="my_time.h" />

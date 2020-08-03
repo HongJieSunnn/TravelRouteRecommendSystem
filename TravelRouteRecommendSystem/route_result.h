@@ -6,6 +6,7 @@ class RouteResult
 {
 public:
 	static char* remark;
+	static char* error;
 };
 
 #endif // !ROUTERESULT_H

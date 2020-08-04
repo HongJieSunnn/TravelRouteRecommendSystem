@@ -98,6 +98,8 @@ namespace UserRequirementNamespace
 		PRETREAT_TRAVELTYPE_SUCCEED,
 		PRETREAT_VEHICLE_EXPERIENCE_FAILED,
 		PRETREAT_VEHICLE_EXPERIENCE_SUCCEED,
+		PRETREAT_TRANSIST_TYPE_FAILED,
+		PRETREAT_TRANSIST_TYPE_SUCCEED,
 	};
 	enum PretreatTimeStatus
 	{
@@ -119,6 +121,12 @@ namespace UserRequirementNamespace
 		REMARK_COMFORTABLE_EXPERIENCE,
 		REMARK_PRETREAT_END
 	};
+	enum PretreatRemarkNeeds
+	{
+		PRETREAT_REMARK_NEEDS_ERROR,
+		PRETREAT_REMARK_NEEDS_SUCCEED,
+		PRETREAT_REMARK_NEEDS_EMPTY,
+	};
 	enum PretreatTravelTypeStatus
 	{
 		PRETREAT_TRAVELTYPE_FAILED_ERROR_TYPE,
@@ -130,6 +138,12 @@ namespace UserRequirementNamespace
 		PRETREAT_VEHICLE_TYPE_SUCCEED,
 		PRETREAT_TICKET_TYPE_ERROR,
 		PRETREAT_TICKET_TYPE_SUCCEED,
+	};
+	enum PretreatTransitTypeStatus
+	{
+		PRETREAT_TRANSIST_TYPE_ERROR,
+		PRETREAT_TRANSIST_TYPE_SUCCEED,
+		PRETREAT_TRANSIST_TYPE_ERROR_TYPE,
 	};
 }
 using namespace UserRequirementNamespace;
@@ -144,7 +158,37 @@ UserRequirementAfterPretreat UserRequirement::pretreatUserRequirement() noexcept
 			3. 根据出行类型枚举值以及用户给定的出行时间的状态(来回时间给没给)来推荐最好的出行时间
 			4. 
 	*/
+	if ((PretreatStatus)pretreatCities(requirement) == PretreatStatus::PRETREAT_CITIES_FAILED)
+	{
+		throw "预处理城市时出现错误";
+	}
 
+	if ((PretreatStatus)pretreatTime(requirement) == PretreatStatus::PRETREAT_TIME_FAILED)
+	{
+		throw "预处理时间时出现错误";
+	}
+
+	if ((PretreatStatus)dealPretreatTravelTypeStatue(pretreatTravelType(requirement)) == PretreatStatus::PRETREAT_TRAVELTYPE_FAILED)
+	{
+		throw "预处理出游方式时出现错误";
+	}
+
+	if ((PretreatStatus)dealPretreatRemarkStatue(pretreatRemark(requirement)) == PretreatStatus::PRETREAT_REMARK_FAILED)
+	{
+		throw "预处理备注时出现错误";
+	}
+
+	if ((PretreatStatus)dealPretreatVehicleExperienceStatue(pretreatVehicleExperience(requirement)) == PretreatStatus::PRETREAT_VEHICLE_EXPERIENCE_FAILED)
+	{
+		throw "预处理交通体验时出现错误";
+	}
+
+	if ((PretreatStatus)dealPretreatTransitTypeStatue(pretreatTransitType(requirement)) == PretreatStatus::PRETREAT_TRANSIST_TYPE_FAILED)
+	{
+		throw "预处理中转方式时出现错误";
+	}
+
+	return requirement;
 }
 
 PretreatStatue UserRequirement::pretreatCities(UserRequirementAfterPretreat& requirement)
@@ -169,6 +213,7 @@ PretreatStatue UserRequirement::pretreatTime(UserRequirementAfterPretreat& requi
 	if (!dealPretreatTimeStatue(timeToMyTimeAndIntoRequirementAfterPreTreat(requirement)))
 	{
 		//直接返回带错误信息的请求给后端
+		return PRETREAT_TIME_FAILED;
 	}
 	return PRETREAT_TIME_SUCCEED;
 }
@@ -219,45 +264,59 @@ PretreatStatue UserRequirement::dealPretreatTimeStatue(PretreatStatue statue_cod
 
 PretreatStatue UserRequirement::pretreatTravelType(UserRequirementAfterPretreat& requirement)
 {
+	if (this->travel_type == "" || this->travel_type == nullptr)
+	{
+		this->travel_type = (char*)"个人出游";
+	}
+
+	//种类已经可以决定推荐的时间、价格。。类型了 只不过可能会根据备注而改变
 	if (this->travel_type == "商务出差")
 	{
 		requirement.travelType = BUSINESS_TRIP;
 		requirement.timeType = TIME_BETTER;
+		requirement.priceType = PRICE_REGARDLESS;
 	}
 	else if (this->travel_type == "个人出游")
 	{
 		requirement.travelType = PERSONAL_TRIP;
 		requirement.timeType = TIME_REGARDLESS;
+		requirement.priceType = PRICE_AFFORDABLE;
 	}
 	else if (this->travel_type == "朋友出游")
 	{
 		requirement.travelType = WITH_FRIEND_TRIP;
 		requirement.timeType = TIME_REGARDLESS;
+		requirement.priceType = PRICE_AFFORDABLE;
 	}
 	else if (this->travel_type == "家庭出游")
 	{
 		requirement.travelType = WITH_FAMILIES_TRIP;
 		requirement.timeType = TIME_BETTER;
+		requirement.priceType = PRICE_AFFORDABLE;
 	}
 	else if (this->travel_type == "上学")
 	{
 		requirement.travelType = TO_SCHOOL_TRIP;
 		requirement.timeType = TIME_REGARDLESS;
+		requirement.priceType = PRICE_AFFORDABLE;
 	}
 	else if (this->travel_type == "紧急出行")
 	{
 		requirement.travelType = URGENT_TRIP;
 		requirement.timeType = TIME_FIRST;
+		requirement.priceType = PRICE_REGARDLESS;
 	}
 	else if (this->travel_type == "商务出差|紧急出行")
 	{
 		requirement.travelType = URGENT_BUSINESS_TRIP;
 		requirement.timeType = TIME_FIRST;
+		requirement.priceType = PRICE_REGARDLESS;
 	}
 	else if (this->travel_type == "上学|紧急出行")
 	{
 		requirement.travelType = URGENT_TO_SCHOOL_TRIP;
 		requirement.timeType = TIME_FIRST;
+		requirement.priceType = PRICE_REGARDLESS;
 	}
 	else
 	{
@@ -285,7 +344,9 @@ PretreatStatue UserRequirement::pretreatVehicleExperience(UserRequirementAfterPr
 	{
 		return PRETREAT_VEHICLE_TYPE_EMPTY_TYPE;
 	}
-
+	/*
+		处理交通工具类型
+	*/
 	if (this->vehicle_type == "任意")
 	{
 		requirement.vehicleType = ALL;
@@ -302,11 +363,106 @@ PretreatStatue UserRequirement::pretreatVehicleExperience(UserRequirementAfterPr
 	{
 		return PRETREAT_VEHICLE_TYPE_ERROR_TYPE;
 	}
+
+	/*
+		根据requirement.priceType来决定ticket类型
+	*/
+	switch (requirement.priceType)
+	{
+	case PRICE_REGARDLESS:
+		switch (requirement.timeType)
+		{
+		case TIME_FIRST:
+			requirement.ticketType = ALL_CLASS_TICKET;
+			break;
+		case TIME_REGARDLESS:
+		case TIME_BETTER:
+			requirement.ticketType = SECOND_CLASS_TICKET;
+			break;
+		}
+		return PRETREAT_TICKET_TYPE_SUCCEED;
+		break;
+	case PRICE_AFFORDABLE:
+	case PRICE_CHEAP:
+		requirement.ticketType = SECOND_CLASS_TICKET;
+		return PRETREAT_TICKET_TYPE_SUCCEED;
+		break;
+	case PRICE_EXPENSIVE:
+		requirement.ticketType = BUSINESS_CLASS_TICKET;
+		return PRETREAT_TICKET_TYPE_SUCCEED;
+		break;
+	default:
+		return PRETREAT_TICKET_TYPE_ERROR;
+		break;
+	}
+}
+
+PretreatStatue UserRequirement::dealPretreatVehicleExperienceStatue(PretreatStatue statue_code)
+{
+	switch (statue_code)
+	{
+	case PRETREAT_VEHICLE_TYPE_EMPTY_TYPE:
+		//TODO:直接结束 返回后端表示没有选择交通工具(一般处理过不会出现这个 出现这个代码意味着后端传过来的是空的)
+		return PRETREAT_VEHICLE_EXPERIENCE_FAILED;
+		break;
+	case PRETREAT_VEHICLE_TYPE_ERROR_TYPE:
+		//TODO:直接结束 返回后端说交通工具类型错误
+		return PRETREAT_VEHICLE_EXPERIENCE_FAILED;
+		break;
+	case PRETREAT_TICKET_TYPE_ERROR:
+		//TODO:priceType错误
+		return PRETREAT_VEHICLE_EXPERIENCE_FAILED;
+		break;
+	case PRETREAT_TICKET_TYPE_SUCCEED:
+	case PRETREAT_VEHICLE_TYPE_SUCCEED:
+		return PRETREAT_VEHICLE_EXPERIENCE_SUCCEED;
+	default:
+		return PRETREAT_VEHICLE_EXPERIENCE_FAILED;
+		break;
+	}
 }
 
 PretreatStatue UserRequirement::pretreatTransitType(UserRequirementAfterPretreat& requirement)
 {
-	
+	if (this->transit_type == "" || this->transit_type == nullptr)
+	{
+		this->transit_type = (char*)"直达";
+	}
+
+	if (this->transit_type == "直达")
+	{
+		requirement.transitType = DIRECT;
+	}
+	else if(this->transit_type=="中转")
+	{
+		requirement.transitType = TRANS;
+	}
+	else if (this->transit_type == "混合中转")
+	{
+		requirement.transitType = FIX_TRANS;
+	}
+	else
+	{
+		return PRETREAT_TRANSIST_TYPE_ERROR_TYPE;
+	}
+	return PretreatTransitTypeStatus::PRETREAT_TRANSIST_TYPE_SUCCEED;
+}
+
+PretreatStatue UserRequirement::dealPretreatTransitTypeStatue(PretreatStatue statue_code)
+{
+	switch (statue_code)
+	{
+	case PRETREAT_TRANSIST_TYPE_ERROR_TYPE:
+		//TODO:中转类型字符串错误
+		return PRETREAT_TRANSIST_TYPE_FAILED;
+		break;
+	case PretreatTransitTypeStatus::PRETREAT_TRANSIST_TYPE_SUCCEED:
+		return PretreatStatus::PRETREAT_TRANSIST_TYPE_SUCCEED;
+		break;
+	default:
+		return PRETREAT_TRANSIST_TYPE_FAILED;
+		break;
+	}
 }
 
 PretreatStatue UserRequirement::pretreatRemark(UserRequirementAfterPretreat& requirement)
@@ -356,13 +512,27 @@ PretreatStatue UserRequirement::pretreatRemark(UserRequirementAfterPretreat& req
 	{
 		remark_needs_status_code.push_back(REMARK_COMFORTABLE_EXPERIENCE);
 	}
+
 	if (remark_needs_status_code.empty())
 		return NO_MATCH_REMARK;
-	return REMARK_PRETREAT_END;
+
+	PretreatRemarkNeeds pretreat_remark_needs_status = (PretreatRemarkNeeds)toDealPretreatRemarkNeeds(requirement);
+	switch (pretreat_remark_needs_status)
+	{
+	case UserRequirementNamespace::PRETREAT_REMARK_NEEDS_ERROR:
+		//TODO:直接返回信息给后端
+		return PRETREAT_REMARK_FAILED;
+		break;
+	case UserRequirementNamespace::PRETREAT_REMARK_NEEDS_SUCCEED:
+	case UserRequirementNamespace::PRETREAT_REMARK_NEEDS_EMPTY:
+		return REMARK_PRETREAT_END;
+		break;
+	}
 }
 
 PretreatStatue UserRequirement::dealPretreatRemarkStatue(PretreatStatue statue_code)
 {
+
 	switch (statue_code)
 	{
 	case NO_REMARK:
@@ -386,4 +556,50 @@ PretreatStatue UserRequirement::dealPretreatRemarkStatue(PretreatStatue statue_c
 		break;
 	}
 	return PretreatStatus::PRETREAT_REMARK_FAILED;
+}
+
+PretreatStatue UserRequirement::toDealPretreatRemarkNeeds(UserRequirementAfterPretreat& requirement)
+{
+	if (UserRequirementNamespace::remark_needs_status_code.empty())
+		return PRETREAT_REMARK_NEEDS_EMPTY;
+	bool change_to_expensive = false;
+	bool change_to_cheap = false;
+	for (int i = 0; i < UserRequirementNamespace::remark_needs_status_code.size(); i++)
+	{
+		switch (UserRequirementNamespace::remark_needs_status_code[i])
+		{
+		case REMARK_CHANGE_TRIP_STATUE_TO_URGENT:
+			requirement.timeType = TIME_FIRST;
+			requirement.priceType = PRICE_REGARDLESS;
+			break;
+		case REMARK_FAMILIIES_INCLUDE_THE_OLD_OR_CHILD:
+			requirement.priceType = PRICE_REGARDLESS;
+			break;
+		case REMARK_CHEAP_PRICE:
+			if (!change_to_expensive)
+			{
+				requirement.priceType = PRICE_CHEAP;
+				change_to_cheap = true;
+			}
+			else
+			{
+				RouteResult::remark = (char*)"对不起，我们无法判断您究竟是要贵的还是便宜的价格";
+				return PRETREAT_REMARK_NEEDS_ERROR;
+			}
+			break;
+		case REMARK_COMFORTABLE_EXPERIENCE:
+			if (!change_to_cheap)
+			{
+				requirement.priceType = PRICE_EXPENSIVE;
+				change_to_expensive = true;
+			}
+			else
+			{
+				RouteResult::remark = (char*)"对不起，我们无法判断您究竟是要贵的还是便宜的价格";
+				return PRETREAT_REMARK_NEEDS_ERROR;
+			}
+			break;
+		}
+	}
+	return PRETREAT_REMARK_NEEDS_SUCCEED;
 }

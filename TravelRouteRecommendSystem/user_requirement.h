@@ -96,11 +96,19 @@ public:
 		预处理交通工具体验 即交通工具类型和票类型(座位类型 不同座位体验肯定不同)
 	*/
 	PretreatStatue pretreatVehicleExperience(UserRequirementAfterPretreat& requirement);
+	/*
+		处理预处理交通体验状态码
+	*/
+	PretreatStatue dealPretreatVehicleExperienceStatue(PretreatStatue statue_code);
 
 	/*
 		预处理中转方式 其实直达是最方便的 除非用户指定 否则一般不推荐转车的 除非没有直达
 	*/
 	PretreatStatue pretreatTransitType(UserRequirementAfterPretreat& requirement);
+	/*
+		处理预处理中转方式状态码
+	*/
+	PretreatStatue dealPretreatTransitTypeStatue(PretreatStatue statue_code);
 
 	/*
 		预处理备注
@@ -110,6 +118,11 @@ public:
 	处理预处理备注状态码的函数
 	*/
 	PretreatStatue dealPretreatRemarkStatue(PretreatStatue statue_code);
+
+	/*
+	处理预处理备注需求的函数
+	*/
+	PretreatStatue toDealPretreatRemarkNeeds(UserRequirementAfterPretreat& requirement);
 };
 
 /*

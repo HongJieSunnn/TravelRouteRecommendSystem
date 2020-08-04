@@ -57,6 +57,9 @@
     <ClInclude Include="my_time.h">
       <Filter>头文件\util</Filter>
     </ClInclude>
+    <ClInclude Include="graph.h">
+      <Filter>头文件\DataStruct</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="init_mysql.cpp">
@@ -68,23 +71,26 @@
     <ClCompile Include="change_character_set.cpp">
       <Filter>源文件\util</Filter>
     </ClCompile>
-    <ClCompile Include="get_route.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="vehicle.cpp">
       <Filter>源文件\DataStruct</Filter>
     </ClCompile>
     <ClCompile Include="user_requirement.cpp">
       <Filter>源文件\DataStruct</Filter>
     </ClCompile>
-    <ClCompile Include="route_result.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="TravelRouteRecommendSystem.cpp">
-      <Filter>源文件\DataStruct</Filter>
-    </ClCompile>
     <ClCompile Include="my_time.cpp">
       <Filter>源文件\util</Filter>
+    </ClCompile>
+    <ClCompile Include="graph.cpp">
+      <Filter>源文件\DataStruct</Filter>
+    </ClCompile>
+    <ClCompile Include="TravelRouteRecommendSystem.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="get_route.cpp">
+      <Filter>源文件\DataStruct</Filter>
+    </ClCompile>
+    <ClCompile Include="route_result.cpp">
+      <Filter>源文件\DataStruct</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

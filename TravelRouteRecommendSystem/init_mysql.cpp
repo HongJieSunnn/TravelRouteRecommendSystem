@@ -31,7 +31,6 @@ InitStatue InitMySQL::initGlobleMySQL(string host, string user_name, string pass
 
 CloseStatue InitMySQL::closeGlobleMySQL()
 {
-	
 	if (&db)
 	{
 		mysql_close(&db);

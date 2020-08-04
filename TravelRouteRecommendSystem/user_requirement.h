@@ -2,14 +2,12 @@
 #define USERREQUIREMENT_H
 namespace
 {
-	using TimeWeightType = int;
-	using TimeWeight = int;
-	using PriceWeightType = int;
-	using PriceWeight = int;
-	using TicketType = int;
-	using VehicleType = int;
-	using TravelType = int;
-	using TransitType = int;
+	using TimeType = TimeWeightEnum;
+	using PriceType = PriceWeightEnum;
+	using TicketType = TicketTypeEnum;
+	using VehicleType = VehicleTypeEnum;
+	using TravelType = TravelTypeEnum;
+	using TransitType = TransitTypeEnum;
 	using PretreatStatue = int;
 }
 /*
@@ -32,10 +30,9 @@ namespace
 		5. 上学:这个就在某段时间内所有给它就好了 这个最好选出行方式 或者通过距离
 		6. 紧急出行:例如家里出事了需要紧急出发的 直接找最近时间最快交通方式
 		但是允许紧急出行和上学、出差组合
-
+	*transit_type:中转方式 若无指定 一般默认优先推荐直达
 	*distances:通过调用地图api获取每两个城市之间直线距离 从而判断交通工具推荐
 	*remark:备注
-
 */
 class UserRequirement
 {
@@ -46,6 +43,7 @@ class UserRequirement
 	char* arrive_time;
 	char* vehicle_type;
 	char* travel_type;
+	char* transit_type;
 	int* distances;
 	char* remark;
 
@@ -62,19 +60,26 @@ public:
 	PretreatStatue pretreatCities(UserRequirementAfterPretreat& requirement);
 
 	/*
-		预处理时间 包括开始时间和到达时间
+		预处理时间 得到时间类型是时间优先(紧急)还是无所谓看推荐
 			- 必须有一个不为空 如果用户传来的为全空 后端要把start_time赋值成当前时间
 			- 用户可以只给天 不给时和分 那么默认为0 若都为0 说明出发的具体时间点需要推荐
-			- 需要我通过预处理给这个乘客推荐出适合他的时间
+			- 预处理无法推荐出具体时间 需要后续推荐时才能得到推荐的具体时间点
 	*/
 	PretreatStatue pretreatTime(UserRequirementAfterPretreat& requirement);
 	//把时间从string转换成MyTime并且录入到预处理后的需求中
 	PretreatStatue timeToMyTimeAndIntoRequirementAfterPreTreat(UserRequirementAfterPretreat& requirement);
 
 	/*
-		分配权重的函数
+		处理预处理开始时间和出发时间状态码的函数
 	*/
-	PretreatStatue assignWeights(UserRequirementAfterPretreat& requirement);
+	PretreatStatue dealPretreatTimeStatue(PretreatStatue statue_code);
+
+	/*
+		分配权重的函数
+		*已弃用 没必要分配权重
+		按照sql语句sort顺序和sort列个数来决定什么优先
+	*/
+	//PretreatStatue assignWeights(UserRequirementAfterPretreat& requirement);
 
 	/*
 		根据其它需求分析是否需要预处理出行方式
@@ -83,21 +88,41 @@ public:
 	PretreatStatue pretreatTravelType(UserRequirementAfterPretreat& requirement);
 
 	/*
+		处理预处理出行方式状态码的函数
+	*/
+	PretreatStatue dealPretreatTravelTypeStatue(PretreatStatue statue_code);
+	
+	/*
 		预处理交通工具体验 即交通工具类型和票类型(座位类型 不同座位体验肯定不同)
 	*/
 	PretreatStatue pretreatVehicleExperience(UserRequirementAfterPretreat& requirement);
+	/*
+		处理预处理交通体验状态码
+	*/
+	PretreatStatue dealPretreatVehicleExperienceStatue(PretreatStatue statue_code);
 
 	/*
 		预处理中转方式 其实直达是最方便的 除非用户指定 否则一般不推荐转车的 除非没有直达
 	*/
 	PretreatStatue pretreatTransitType(UserRequirementAfterPretreat& requirement);
+	/*
+		处理预处理中转方式状态码
+	*/
+	PretreatStatue dealPretreatTransitTypeStatue(PretreatStatue statue_code);
 
 	/*
 		预处理备注
 	*/
 	PretreatStatue pretreatRemark(UserRequirementAfterPretreat& requirement);
-	//处理预处理备注状态码的函数
+	/*
+	处理预处理备注状态码的函数
+	*/
 	PretreatStatue dealPretreatRemarkStatue(PretreatStatue statue_code);
+
+	/*
+	处理预处理备注需求的函数
+	*/
+	PretreatStatue toDealPretreatRemarkNeeds(UserRequirementAfterPretreat& requirement);
 };
 
 /*
@@ -109,9 +134,9 @@ struct UserRequirementAfterPretreat
 	vector<string> arrive_cities;
 	MyTime start_time;
 	MyTime arrive_time;
-	vector<TimeWeight> timeWeight;
-	vector<PriceWeight> priceWeight;
-	vector<TicketType> ticketType;
+	TimeType timeType;
+	PriceType priceType;
+	TicketType ticketType;
 	VehicleType vehicleType;
 	TravelType travelType;
 	TransitType transitType;

@@ -11,4 +11,24 @@ protected:
 	Vehicle();
 };
 
+class AirPlane:public Vehicle
+{
+public:
+	AirPlane();
+	~AirPlane();
+
+private:
+
+};
+
+class HSRC:public Vehicle
+{
+public:
+	HSRC();
+	~HSRC();
+
+private:
+
+};
+
 #endif // !VEHICLE_H

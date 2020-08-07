@@ -1,14 +1,12 @@
-#include<iostream>
-#include<mysql.h>
-#include<string>
 #include "init_mysql.h"
-using std::string;
+MYSQL InitMySQL::db = MYSQL();
+MYSQL_RES* InitMySQL::result = nullptr;
 
 InitMySQL::InitMySQL()
 {
 }
 
-InitStatue InitMySQL::initGlobleMySQL(string host, string user_name, string password, string database_name, int port, string character_set = "gbk")
+InitStatue InitMySQL::initGlobleMySQL(string host, string user_name, string password, string database_name, int port, string character_set)
 {
 	if (mysql_library_init(0, NULL, NULL) != 0)
 	{
@@ -39,7 +37,7 @@ CloseStatue InitMySQL::closeGlobleMySQL()
 	return CLOSE_FAILED;
 }
 
-int InitMySQL::resetGlobleMySQL(string host, string user_name, string password, string database_name, int port, string character_set = "gbk")
+int InitMySQL::resetGlobleMySQL(string host, string user_name, string password, string database_name, int port, string character_set)
 {
 	int close_statu= closeGlobleMySQL();
 	if (close_statu==CLOSE_FAILED)
@@ -65,4 +63,40 @@ MYSQL_RES* InitMySQL::execSQLToGetResult(string SQL)
 		result = mysql_store_result(&db);
 	}
 	return result;
+}
+
+bool DBStatus::dealInitMySQLError(InitStatue statue_code)
+{
+	{
+		switch (statue_code)
+		{
+		case DBStatus::INIT_MYSQL_FAILED:
+			std::cout << INIT_MYSQL_FAILED_STR << "\n";
+			return false;
+			break;
+		case DBStatus::INIT_MYSQL_LIBRARY_FAILED:
+			std::cout << INIT_MYSQL_LIBRARY_FAILED_STR << "\n";
+			return false;
+			break;
+		case DBStatus::INIT_DB_OBJECT_FAILED:
+			std::cout << INIT_DB_OBJECT_FAILED_STR << "\n";
+			return false;
+			break;
+		case DBStatus::INIT_MYSQL_OPITION_FAILED:
+			std::cout << INIT_MYSQL_OPITION_FAILED_STR << "\n";
+			return false;
+			break;
+		}
+		return true;
+	}
+}
+
+bool DBStatus::dealCloseSQLError(CloseStatue statue_code)
+{
+	if (statue_code == CLOSE_FAILED)
+	{
+		std::cout << CLOSE_FAILED_STR << "\n";
+		return false;
+	}
+	return true;
 }

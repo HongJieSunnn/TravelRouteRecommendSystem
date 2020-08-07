@@ -1,152 +1,9 @@
 #include "user_requirement.h"
-#include"my_time.h"
-#include"route_result.h"
-#include<vector>
-#include<string>
-using std::vector;
-using std::string;
 
-namespace UserRequirementNamespace
-{
-	//备注需求数组
-	vector<PretreatRemarkStatus> remark_needs_status_code;
-
-	//regardless:不考虑 也就是可以接受任何推荐的
-
-	/*
-		时间权重枚举
-	*/
-	enum TimeWeightEnum
-	{
-		TIME_REGARDLESS,
-		TIME_FIRST,
-		TIME_BETTER
-	};
-	/*
-		价格权重枚举
-	*/
-	enum PriceWeightEnum
-	{
-		PRICE_REGARDLESS,
-		PRICE_CHEAP,
-		PRICE_AFFORDABLE,
-		PRICE_EXPENSIVE
-	};
-	/*
-		票种类 通过出行类型分配
-		飞机只有一种票价 就把它当做二等座
-	*/
-	enum TicketTypeEnum
-	{
-		ONE_CLASS_TICKET=1,
-		SECOND_CLASS_TICKET,
-		BUSINESS_CLASS_TICKET,
-		ALL_CLASS_TICKET//所有类型都展示 用户自己选
-
-		//把所有票价都放进去 但是排放的顺序不同 例如速度优先其它不管 就把二等座优先推荐
-	};
-	/*
-		交通工具枚举
-	*/
-	enum VehicleTypeEnum
-	{
-		ALL=1,
-		HSRC,
-		AIRPLANE,
-	};
-	/*
-		出行方式 即限定的几种
-	*/
-	enum TravelTypeEnum
-	{
-		BUSINESS_TRIP=1,
-		PERSONAL_TRIP,
-		WITH_FRIEND_TRIP,
-		WITH_FAMILIES_TRIP,
-		TO_SCHOOL_TRIP,
-		URGENT_TRIP,
-		URGENT_BUSINESS_TRIP,
-		URGENT_TO_SCHOOL_TRIP
-	};
-	/*
-		中转类型 即
-			1. 直达
-			2. 中转
-			3. 混合中转
-	*/
-	enum TransitTypeEnum
-	{
-		DIRECT=1,
-		TRANS,
-		FIX_TRANS,
-	};
-	/*
-		预处理状态码 方便后续操作
-		这个返回成功或失败 每个对象的具体类型有对应的枚举
-	*/
-	enum PretreatStatus
-	{
-		PRETREAT_FAILED,
-		PRETREAT_SUCCEED,
-		PRETREAT_CITIES_FAILED,
-		PRETREAT_CITIES_SUCCEED,
-		PRETREAT_TIME_FAILED,
-		PRETREAT_TIME_SUCCEED,
-		PRETREAT_REMARK_FAILED,
-		PRETREAT_REMARK_SUCCEED,
-		PRETREAT_TRAVELTYPE_FAILED,
-		PRETREAT_TRAVELTYPE_SUCCEED,
-		PRETREAT_VEHICLE_EXPERIENCE_FAILED,
-		PRETREAT_VEHICLE_EXPERIENCE_SUCCEED,
-		PRETREAT_TRANSIST_TYPE_FAILED,
-		PRETREAT_TRANSIST_TYPE_SUCCEED,
-	};
-	enum PretreatTimeStatus
-	{
-		PRETREAT_TIME_INTO_REQUIREMENT_ERROR,
-		PRETREAT_TIME_INTO_REQUIREMENT_SUCCEED,
-		PRETREAT_TIME_NO_BOTH_TIME,
-		PRETREAT_TIME_NO_START_TIME,
-		PRETREAT_TIME_NO_ARRIVLE_TIME,
-	};
-	enum PretreatRemarkStatus
-	{
-		NO_REMARK,
-		NO_MATCH_REMARK,//备注里没有包含符合定义的那些操作的文字(例如备注打了个sb 那么不执行任何操作) 备注却不为空
-		REMARK_CHANGE_TRIP_STATUE_TO_URGENT,
-		REMARK_CANNOT_CHANGE_TRIP_STATUE_TO_URGENT,
-		REMARK_FAMILIIES_INCLUDE_THE_OLD_OR_CHILD,
-		REMARK_FAMLIIES_INCLUDE_THE_OLD_OR_CHILD_BUT_NOT_WITH_FAMILIES,
-		REMARK_CHEAP_PRICE,
-		REMARK_COMFORTABLE_EXPERIENCE,
-		REMARK_PRETREAT_END
-	};
-	enum PretreatRemarkNeeds
-	{
-		PRETREAT_REMARK_NEEDS_ERROR,
-		PRETREAT_REMARK_NEEDS_SUCCEED,
-		PRETREAT_REMARK_NEEDS_EMPTY,
-	};
-	enum PretreatTravelTypeStatus
-	{
-		PRETREAT_TRAVELTYPE_FAILED_ERROR_TYPE,
-	};
-	enum PretreatVehicleExperienceStatus
-	{
-		PRETREAT_VEHICLE_TYPE_EMPTY_TYPE,
-		PRETREAT_VEHICLE_TYPE_ERROR_TYPE,
-		PRETREAT_VEHICLE_TYPE_SUCCEED,
-		PRETREAT_TICKET_TYPE_ERROR,
-		PRETREAT_TICKET_TYPE_SUCCEED,
-	};
-	enum PretreatTransitTypeStatus
-	{
-		PRETREAT_TRANSIST_TYPE_ERROR,
-		PRETREAT_TRANSIST_TYPE_SUCCEED,
-		PRETREAT_TRANSIST_TYPE_ERROR_TYPE,
-	};
-}
 using namespace UserRequirementNamespace;
+
+//备注需求数组
+vector<PretreatRemarkStatus> remark_needs_status_code;
 
 UserRequirementAfterPretreat UserRequirement::pretreatUserRequirement() noexcept
 {
@@ -183,7 +40,7 @@ UserRequirementAfterPretreat UserRequirement::pretreatUserRequirement() noexcept
 		throw "预处理交通体验时出现错误";
 	}
 
-	if ((PretreatStatus)dealPretreatTransitTypeStatue(pretreatTransitType(requirement)) == PretreatStatus::PRETREAT_TRANSIST_TYPE_FAILED)
+	if ((PretreatStatus)dealPretreatTransitTypeStatue(pretreatTransitType(requirement)) == PretreatStatus::PRETREAT_TRANSIST_TYPE_FAILED_FINALL)
 	{
 		throw "预处理中转方式时出现错误";
 	}
@@ -234,7 +91,7 @@ PretreatStatue UserRequirement::timeToMyTimeAndIntoRequirementAfterPreTreat(User
 		return PRETREAT_TIME_NO_START_TIME;
 	}
 
-	if (this->arrive_time != "" && this->start_time != nullptr)//若到达时间不为空
+	if (this->arrive_time != "" && this->arrive_time != nullptr)//若到达时间不为空
 	{
 		requirement.arrive_time = MyTime::stringToMyTime(this->arrive_time, YYYY_MM_DD_HH_MM);
 	}
@@ -454,13 +311,13 @@ PretreatStatue UserRequirement::dealPretreatTransitTypeStatue(PretreatStatue sta
 	{
 	case PRETREAT_TRANSIST_TYPE_ERROR_TYPE:
 		//TODO:中转类型字符串错误
-		return PRETREAT_TRANSIST_TYPE_FAILED;
+		return PRETREAT_TRANSIST_TYPE_FAILED_FINALL;
 		break;
 	case PretreatTransitTypeStatus::PRETREAT_TRANSIST_TYPE_SUCCEED:
-		return PretreatStatus::PRETREAT_TRANSIST_TYPE_SUCCEED;
+		return PretreatStatus::PRETREAT_TRANSIST_TYPE_SUCCEED_FINALL;
 		break;
 	default:
-		return PRETREAT_TRANSIST_TYPE_FAILED;
+		return PRETREAT_TRANSIST_TYPE_FAILED_FINALL;
 		break;
 	}
 }
@@ -519,12 +376,12 @@ PretreatStatue UserRequirement::pretreatRemark(UserRequirementAfterPretreat& req
 	PretreatRemarkNeeds pretreat_remark_needs_status = (PretreatRemarkNeeds)toDealPretreatRemarkNeeds(requirement);
 	switch (pretreat_remark_needs_status)
 	{
-	case UserRequirementNamespace::PRETREAT_REMARK_NEEDS_ERROR:
+	case PRETREAT_REMARK_NEEDS_ERROR:
 		//TODO:直接返回信息给后端
 		return PRETREAT_REMARK_FAILED;
 		break;
-	case UserRequirementNamespace::PRETREAT_REMARK_NEEDS_SUCCEED:
-	case UserRequirementNamespace::PRETREAT_REMARK_NEEDS_EMPTY:
+	case PRETREAT_REMARK_NEEDS_SUCCEED:
+	case PRETREAT_REMARK_NEEDS_EMPTY:
 		return REMARK_PRETREAT_END;
 		break;
 	}
@@ -560,13 +417,13 @@ PretreatStatue UserRequirement::dealPretreatRemarkStatue(PretreatStatue statue_c
 
 PretreatStatue UserRequirement::toDealPretreatRemarkNeeds(UserRequirementAfterPretreat& requirement)
 {
-	if (UserRequirementNamespace::remark_needs_status_code.empty())
+	if (remark_needs_status_code.empty())
 		return PRETREAT_REMARK_NEEDS_EMPTY;
 	bool change_to_expensive = false;
 	bool change_to_cheap = false;
-	for (int i = 0; i < UserRequirementNamespace::remark_needs_status_code.size(); i++)
+	for (int i = 0; i < remark_needs_status_code.size(); i++)
 	{
-		switch (UserRequirementNamespace::remark_needs_status_code[i])
+		switch (remark_needs_status_code[i])
 		{
 		case REMARK_CHANGE_TRIP_STATUE_TO_URGENT:
 			requirement.timeType = TIME_FIRST;

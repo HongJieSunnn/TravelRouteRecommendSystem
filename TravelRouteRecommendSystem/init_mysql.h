@@ -1,5 +1,9 @@
 #ifndef INITMYSQL_H
 #define INITMYSQL_H
+#include<mysql.h>
+#include<iostream>
+#include<string>
+using std::string;
 namespace DBStatus
 {
 
@@ -35,43 +39,13 @@ namespace DBStatus
 		处理初始化mysql时的错误 只输出错误代码 不输出正确
 		*statue_code 初始化的状态码 为INIT_MYSQL_SUCCEED return true 其余false
 	*/
-	bool dealInitMySQLError(InitStatue statue_code)
-	{
-		switch (statue_code)
-		{
-		case DBStatus::INIT_MYSQL_FAILED:
-			std::cout << INIT_MYSQL_FAILED_STR << "\n";
-			return false;
-			break;
-		case DBStatus::INIT_MYSQL_LIBRARY_FAILED:
-			std::cout << INIT_MYSQL_LIBRARY_FAILED_STR << "\n";
-			return false;
-			break;
-		case DBStatus::INIT_DB_OBJECT_FAILED:
-			std::cout << INIT_DB_OBJECT_FAILED_STR << "\n";
-			return false;
-			break;
-		case DBStatus::INIT_MYSQL_OPITION_FAILED:
-			std::cout << INIT_MYSQL_OPITION_FAILED_STR << "\n";
-			return false;
-			break;
-		}
-		return true;
-	}
+	bool dealInitMySQLError(InitStatue statue_code);
 
 	/*
 		处理关闭mysql时的错误
 		*statue_code 关闭的状态码
 	*/
-	bool dealCloseSQLError(CloseStatue statue_code)
-	{
-		if (statue_code == CLOSE_FAILED)
-		{
-			std::cout << CLOSE_FAILED_STR << "\n";
-			return false;
-		}
-		return true;
-	}
+	bool dealCloseSQLError(CloseStatue statue_code);
 }
 using namespace DBStatus;
 /*

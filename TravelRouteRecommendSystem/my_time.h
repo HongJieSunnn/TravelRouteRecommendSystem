@@ -1,5 +1,8 @@
 #ifndef MY_TIME_H
 #define MY_TIME_H
+#include<string>
+#include<time.h>
+using std::string;
 namespace
 {
 	enum TimeFormatEnum

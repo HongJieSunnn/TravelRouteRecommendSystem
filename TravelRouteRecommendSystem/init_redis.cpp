@@ -1,10 +1,6 @@
-#include<iostream>
-#include<hiredis.h>
-#include<string>
 #include "init_redis.h"
-#include"route_result.h"
-#include"user_requirement.h"
-using std::string;
+redisContext* InitRedis::redis_context = nullptr;
+redisReply* InitRedis::redis_reply = nullptr;
 
 InitRedis::InitRedis()
 {
@@ -35,4 +31,42 @@ UserRequirement InitRedis::getInforFromGoByRedis()
 int InitRedis::putInforIntoRedis()
 {
 	return 0;
+}
+
+bool RedisStatus::dealInitRedisError(RedisContextErr statue_code)
+{
+	switch (statue_code)
+	{
+	case REDIS_ERR_IO:
+		std::cout << "REDIS_ERR_IO_FAILD" << "\n";
+		return false;
+		break;
+	case REDIS_ERR_EOF:
+		std::cout << "REDIS_ERR_EOF_FAILD" << "\n";
+		return false;
+		break;
+	case REDIS_ERR_PROTOCOL:
+		std::cout << "REDIS_ERR_PROTOCOL_FAILD" << "\n";
+		return false;
+		break;
+	case REDIS_ERR_OOM:
+		std::cout << "REDIS_ERR_OOM_FAILD" << "\n";
+		return false;
+		break;
+	case REDIS_ERR_OTHER:
+		std::cout << "REDIS_ERR_OTHER_FAILD" << "\n";
+		return false;
+		break;
+	}
+	return true;
+}
+
+bool RedisStatus::dealGetRedisReplyError(RedisReplyType statue_code)
+{
+	if (statue_code == REDIS_REPLY_ERROR)
+	{
+		std::cout << "REDIS_REPLY_ERROR" << "\n";
+		return false;
+	}
+	return true;
 }

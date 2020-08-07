@@ -1,15 +1,179 @@
 #ifndef USERREQUIREMENT_H
 #define USERREQUIREMENT_H
+#include"my_time.h"
+#include"route_result.h"
+#include<vector>
+#include<string>
+using std::vector;
+using std::string;
+
+namespace UserRequirementNamespace
+{
+	//regardless:不考虑 也就是可以接受任何推荐的
+
+	/*
+		时间权重枚举
+	*/
+	enum TimeWeightEnum
+	{
+		TIME_REGARDLESS,
+		TIME_FIRST,
+		TIME_BETTER
+	};
+	/*
+		价格权重枚举
+	*/
+	enum PriceWeightEnum
+	{
+		PRICE_REGARDLESS,
+		PRICE_CHEAP,
+		PRICE_AFFORDABLE,
+		PRICE_EXPENSIVE
+	};
+	/*
+		票种类 通过出行类型分配
+		飞机只有一种票价 就把它当做二等座
+	*/
+	enum TicketTypeEnum
+	{
+		ONE_CLASS_TICKET = 1,
+		SECOND_CLASS_TICKET,
+		BUSINESS_CLASS_TICKET,
+		ALL_CLASS_TICKET//所有类型都展示 用户自己选
+
+		//把所有票价都放进去 但是排放的顺序不同 例如速度优先其它不管 就把二等座优先推荐
+	};
+	/*
+		交通工具枚举
+	*/
+	enum VehicleTypeEnum
+	{
+		ALL = 1,
+		HSRC,
+		AIRPLANE,
+	};
+	/*
+		出行方式 即限定的几种
+	*/
+	enum TravelTypeEnum
+	{
+		BUSINESS_TRIP = 1,
+		PERSONAL_TRIP,
+		WITH_FRIEND_TRIP,
+		WITH_FAMILIES_TRIP,
+		TO_SCHOOL_TRIP,
+		URGENT_TRIP,
+		URGENT_BUSINESS_TRIP,
+		URGENT_TO_SCHOOL_TRIP
+	};
+	/*
+		中转类型 即
+			1. 直达
+			2. 中转
+			3. 混合中转
+	*/
+	enum TransitTypeEnum
+	{
+		DIRECT = 1,
+		TRANS,
+		FIX_TRANS,
+	};
+	/*
+		预处理状态码 方便后续操作
+		这个返回成功或失败 每个对象的具体类型有对应的枚举
+	*/
+	enum PretreatStatus
+	{
+		PRETREAT_FAILED,
+		PRETREAT_SUCCEED,
+		PRETREAT_CITIES_FAILED,
+		PRETREAT_CITIES_SUCCEED,
+		PRETREAT_TIME_FAILED,
+		PRETREAT_TIME_SUCCEED,
+		PRETREAT_REMARK_FAILED,
+		PRETREAT_REMARK_SUCCEED,
+		PRETREAT_TRAVELTYPE_FAILED,
+		PRETREAT_TRAVELTYPE_SUCCEED,
+		PRETREAT_VEHICLE_EXPERIENCE_FAILED,
+		PRETREAT_VEHICLE_EXPERIENCE_SUCCEED,
+		PRETREAT_TRANSIST_TYPE_FAILED_FINALL,
+		PRETREAT_TRANSIST_TYPE_SUCCEED_FINALL,
+	};
+	enum PretreatTimeStatus
+	{
+		PRETREAT_TIME_INTO_REQUIREMENT_ERROR,
+		PRETREAT_TIME_INTO_REQUIREMENT_SUCCEED,
+		PRETREAT_TIME_NO_BOTH_TIME,
+		PRETREAT_TIME_NO_START_TIME,
+		PRETREAT_TIME_NO_ARRIVLE_TIME,
+	};
+	enum PretreatRemarkStatus
+	{
+		NO_REMARK,
+		NO_MATCH_REMARK,//备注里没有包含符合定义的那些操作的文字(例如备注打了个sb 那么不执行任何操作) 备注却不为空
+		REMARK_CHANGE_TRIP_STATUE_TO_URGENT,
+		REMARK_CANNOT_CHANGE_TRIP_STATUE_TO_URGENT,
+		REMARK_FAMILIIES_INCLUDE_THE_OLD_OR_CHILD,
+		REMARK_FAMLIIES_INCLUDE_THE_OLD_OR_CHILD_BUT_NOT_WITH_FAMILIES,
+		REMARK_CHEAP_PRICE,
+		REMARK_COMFORTABLE_EXPERIENCE,
+		REMARK_PRETREAT_END
+	};
+	enum PretreatRemarkNeeds
+	{
+		PRETREAT_REMARK_NEEDS_ERROR,
+		PRETREAT_REMARK_NEEDS_SUCCEED,
+		PRETREAT_REMARK_NEEDS_EMPTY,
+	};
+	enum PretreatTravelTypeStatus
+	{
+		PRETREAT_TRAVELTYPE_FAILED_ERROR_TYPE,
+	};
+	enum PretreatVehicleExperienceStatus
+	{
+		PRETREAT_VEHICLE_TYPE_EMPTY_TYPE,
+		PRETREAT_VEHICLE_TYPE_ERROR_TYPE,
+		PRETREAT_VEHICLE_TYPE_SUCCEED,
+		PRETREAT_TICKET_TYPE_ERROR,
+		PRETREAT_TICKET_TYPE_SUCCEED,
+	};
+	enum PretreatTransitTypeStatus
+	{
+		PRETREAT_TRANSIST_TYPE_ERROR,
+		PRETREAT_TRANSIST_TYPE_SUCCEED,
+		PRETREAT_TRANSIST_TYPE_ERROR_TYPE,
+	};
+
+};
+
 namespace
 {
-	using TimeType = TimeWeightEnum;
-	using PriceType = PriceWeightEnum;
-	using TicketType = TicketTypeEnum;
-	using VehicleType = VehicleTypeEnum;
-	using TravelType = TravelTypeEnum;
-	using TransitType = TransitTypeEnum;
+	using TimeType = UserRequirementNamespace::TimeWeightEnum;
+	using PriceType = UserRequirementNamespace::PriceWeightEnum;
+	using TicketType = UserRequirementNamespace::TicketTypeEnum;
+	using VehicleType = UserRequirementNamespace::VehicleTypeEnum;
+	using TravelType = UserRequirementNamespace::TravelTypeEnum;
+	using TransitType = UserRequirementNamespace::TransitTypeEnum;
 	using PretreatStatue = int;
 }
+
+/*
+	该结构用来储存预处理后的用户需求	一组城市一个推荐 所以需要数组
+*/
+struct UserRequirementAfterPretreat
+{
+	vector<string> start_cities;
+	vector<string> arrive_cities;
+	MyTime start_time;
+	MyTime arrive_time;
+	TimeType timeType;
+	PriceType priceType;
+	TicketType ticketType;
+	VehicleType vehicleType;
+	TravelType travelType;
+	TransitType transitType;
+};
+
 /*
 	这个类是用来存储用户需求 并且预处理数据
 	从c#传入的数据会放到这里面
@@ -48,11 +212,26 @@ class UserRequirement
 	char* remark;
 
 public:
+	UserRequirement() {};
+
+	UserRequirement(char** start_cities, char** arrive_cities, int city_num, char* start_time, char* arrive_time, char* vehicle_type, char* travel_type, char* transit_type, int* distances, char* remark) :
+		start_cities(start_cities),
+		arrive_cities(arrive_cities),
+		city_num(city_num),
+		start_time(start_time),
+		arrive_time(arrive_time),
+		vehicle_type(vehicle_type),
+		travel_type(travel_type),
+		transit_type(transit_type),
+		distances(distances),
+		remark(remark)
+	{
+	}
 	/*
 		预处理用户需求 得到推荐的方式(例如时间 中转方式 钱等等) 更方便后续使用
 	*/
 	UserRequirementAfterPretreat pretreatUserRequirement() noexcept;
-
+protected:
 	/*
 		预处理城市 包括开始城市和结束城市
 		*requirement:最后要被返回的那个预处理过的用户需求
@@ -123,22 +302,5 @@ public:
 	处理预处理备注需求的函数
 	*/
 	PretreatStatue toDealPretreatRemarkNeeds(UserRequirementAfterPretreat& requirement);
-};
-
-/*
-	该结构用来储存预处理后的用户需求	一组城市一个推荐 所以需要数组
-*/
-struct UserRequirementAfterPretreat
-{
-	vector<string> start_cities;
-	vector<string> arrive_cities;
-	MyTime start_time;
-	MyTime arrive_time;
-	TimeType timeType;
-	PriceType priceType;
-	TicketType ticketType;
-	VehicleType vehicleType;
-	TravelType travelType;
-	TransitType transitType;
 };
 #endif // !USERREQUIREMENT_H

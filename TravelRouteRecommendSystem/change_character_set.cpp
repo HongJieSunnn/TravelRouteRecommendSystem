@@ -1,9 +1,7 @@
 #include "change_character_set.h"
 #include <iostream>
-#include <string>
 #include <string.h>
 #include <stdlib.h>
-using std::string;
 #ifdef _WIN32
 #include <windows.h>
 string ChangeCharacterSet::GbkToUtf8(const char* src_str)

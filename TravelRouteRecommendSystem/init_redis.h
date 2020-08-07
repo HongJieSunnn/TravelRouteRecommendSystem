@@ -1,5 +1,15 @@
 #ifndef INITREDIS_H
 #define INITREDIS_H
+#include<iostream>
+#include<hiredis.h>
+#include<string>
+#include"route_result.h"
+#include"user_requirement.h"
+using std::string;
+
+#pragma comment(lib, "Win32_Interop.lib")
+#pragma comment(lib, "hiredis.lib")
+
 namespace RedisStatus
 {
 	//初始化rediscontext时的错误代码
@@ -13,46 +23,12 @@ namespace RedisStatus
 		处理初始化redis实例时的错误
 		*statue_code 错误代码
 	*/
-	bool dealInitRedisError(RedisContextErr statue_code)
-	{
-		switch (statue_code)
-		{
-		case REDIS_ERR_IO:
-			std::cout << "REDIS_ERR_IO_FAILD" << "\n";
-			return false;
-			break;
-		case REDIS_ERR_EOF:
-			std::cout << "REDIS_ERR_EOF_FAILD" << "\n";
-			return false;
-			break;
-		case REDIS_ERR_PROTOCOL:
-			std::cout << "REDIS_ERR_PROTOCOL_FAILD" << "\n";
-			return false;
-			break;
-		case REDIS_ERR_OOM:
-			std::cout << "REDIS_ERR_OOM_FAILD" << "\n";
-			return false;
-			break;
-		case REDIS_ERR_OTHER:
-			std::cout << "REDIS_ERR_OTHER_FAILD" << "\n";
-			return false;
-			break;
-		}
-		return true;
-	}
+	bool dealInitRedisError(RedisContextErr statue_code);
 	/*
 		处理获取reply时的错误
 		*statue_code 错误代码
 	*/
-	bool dealGetRedisReplyError(RedisReplyType statue_code)
-	{
-		if (statue_code == REDIS_REPLY_ERROR)
-		{
-			std::cout << "REDIS_REPLY_ERROR" << "\n";
-			return false;
-		}
-		return true;
-	}
+	bool dealGetRedisReplyError(RedisReplyType statue_code);
 }
 using namespace RedisStatus;
 /*

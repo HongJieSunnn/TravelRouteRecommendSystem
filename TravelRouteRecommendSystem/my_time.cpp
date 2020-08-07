@@ -1,7 +1,4 @@
 #include "my_time.h"
-#include<string>
-#include<time.h>
-using std::string;
 
 int MyTime::costTime(MyTime time)
 {
@@ -76,7 +73,7 @@ bool MyTime::conformTimeFormatOrNot(string time,int time_format)
 	case YYYY_MM_DD_HH_MM:
 		if (length == 16)
 		{
-			if (time[4] == '.' && time[7] == '.' && time[10] == ' ' && time[13] == ':')//不放在这里面可能会overflow
+			if ((time[4] == '.'|| time[4] == '-') && (time[7] == '.'|| time[7] == '-')&& time[10] == ' ' && time[13] == ':')//不放在这里面可能会overflow
 				return true;
 		}
 		break;

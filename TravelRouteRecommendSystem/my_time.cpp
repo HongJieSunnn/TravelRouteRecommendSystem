@@ -55,6 +55,7 @@ MyTime MyTime::stringToMyTime(string time,int time_format)
 		}
 		break;
 	}
+	
 	return temp_mytime;
 }
 
@@ -86,4 +87,47 @@ bool MyTime::conformTimeFormatOrNot(string time,int time_format)
 		break;
 	}
 	return false;
+}
+
+string MyTime::myTimeToStringByInt(int time_format)
+{
+	string res="";
+
+	switch (time_format)
+	{
+	case YYYY_MM_DD_HH_MM:
+		res.append(to_string(this->year));
+		res.append("-");
+		res.append(to_string(this->month));
+		res.append("-");
+		res.append(to_string(this->day));
+		res.append(" ");
+		if (this->hour < 10)
+		{
+			res.append("0");
+		}
+		res.append(to_string(this->hour));
+		res.append(":");
+		if (this->minute < 10)
+		{
+			res.append("0");
+		}
+		res.append(to_string(this->minute));
+		break;
+	case HH_MM:
+		res = "";
+		if (this->hour < 10)
+		{
+			res.append("0");
+		}
+		res.append(to_string(this->hour));
+		res.append(":");
+		if (this->minute < 10)
+		{
+			res.append("0");
+		}
+		res.append(to_string(this->minute));
+		break;
+	}
+	return res;
 }

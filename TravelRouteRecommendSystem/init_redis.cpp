@@ -11,6 +11,7 @@ RedisContextErr InitRedis::initRedis()
 	redis_context= redisConnect("127.0.0.1", 6379);
 	if (redis_context != NULL && redis_context->err)//因为redis_context->err是redis_context的一个成员 所以即使初始化错误 redis_context也不会为NULL
 	{
+		std::cout << redis_context->errstr << "\n";
 		return redis_context->err;
 	}
 	//0即为没错

@@ -5,7 +5,7 @@ using namespace UserRequirementNamespace;
 //备注需求数组
 vector<PretreatRemarkStatus> remark_needs_status_code;
 
-UserRequirementAfterPretreat UserRequirement::pretreatUserRequirement() noexcept
+UserRequirementAfterPretreat UserRequirement::pretreatUserRequirement()
 {
 	UserRequirementAfterPretreat requirement;
 	/*
@@ -40,7 +40,7 @@ UserRequirementAfterPretreat UserRequirement::pretreatUserRequirement() noexcept
 		throw "预处理交通体验时出现错误";
 	}
 
-	if ((PretreatStatus)dealPretreatTransitTypeStatue(pretreatTransitType(requirement)) == PretreatStatus::PRETREAT_TRANSIST_TYPE_FAILED_FINALL)
+	if ((PretreatStatus)dealPretreatTransitTypeStatue(pretreatTransitType(requirement)) == PretreatStatus::PRETREAT_transit_TYPE_FAILED_FINALL)
 	{
 		throw "预处理中转方式时出现错误";
 	}
@@ -88,6 +88,7 @@ PretreatStatue UserRequirement::timeToMyTimeAndIntoRequirementAfterPreTreat(User
 	}
 	else
 	{
+		requirement.start_time = MyTime();
 		return PRETREAT_TIME_NO_START_TIME;
 	}
 
@@ -97,6 +98,7 @@ PretreatStatue UserRequirement::timeToMyTimeAndIntoRequirementAfterPreTreat(User
 	}
 	else
 	{
+		requirement.arrive_time = MyTime();
 		return PRETREAT_TIME_NO_ARRIVLE_TIME;
 	}
 
@@ -117,6 +119,7 @@ PretreatStatue UserRequirement::dealPretreatTimeStatue(PretreatStatue statue_cod
 		return PRETREAT_TIME_SUCCEED;
 		break;
 	}
+	return PRETREAT_TIME_FAILED;
 }
 
 PretreatStatue UserRequirement::pretreatTravelType(UserRequirementAfterPretreat& requirement)
@@ -193,37 +196,41 @@ PretreatStatue UserRequirement::dealPretreatTravelTypeStatue(PretreatStatue stat
 		return PRETREAT_TRAVELTYPE_SUCCEED;
 		break;
 	}
+	return PRETREAT_TRAVELTYPE_FAILED;
 }
 
 PretreatStatue UserRequirement::pretreatVehicleExperience(UserRequirementAfterPretreat& requirement)
 {
-	if (!this->vehicle_type)
-	{
-		return PRETREAT_VEHICLE_TYPE_EMPTY_TYPE;
-	}
 	/*
 		处理交通工具类型
 	*/
-	if (this->vehicle_type == "任意")
+
+	requirement.vehicleType = vector<VehicleType>(this->city_num);
+	requirement.transitType = vector <TransitType>(this->city_num);
+	//后端传回来时 vehicle_type必须不为空 即使用户给空 后端要自己加上任意
+	for (int i = 0; i < this->city_num; i++)
 	{
-		requirement.vehicleType = ALL;
-	}
-	else if (this->vehicle_type == "铁路")
-	{
-		requirement.vehicleType = HSRC;
-	}
-	else if (this->vehicle_type == "航空")
-	{
-		requirement.vehicleType = AIRPLANE;
-	}
-	else
-	{
-		return PRETREAT_VEHICLE_TYPE_ERROR_TYPE;
+		if (this->vehicle_type[i] == "任意")
+		{
+			requirement.vehicleType[i] = ALL_VEHICLE;
+		}
+		else if (this->vehicle_type[i] == "铁路")
+		{
+			requirement.vehicleType[i] = HSRC;
+		}
+		else if (this->vehicle_type[i] == "航空")
+		{
+			requirement.vehicleType[i] = AIRPLANE;
+		}
+		else
+		{
+			return PRETREAT_VEHICLE_TYPE_ERROR_TYPE;
+		}
 	}
 
 	/*
-		根据requirement.priceType来决定ticket类型
-	*/
+			根据requirement.priceType来决定ticket类型
+		*/
 	switch (requirement.priceType)
 	{
 	case PRICE_REGARDLESS:
@@ -252,6 +259,8 @@ PretreatStatue UserRequirement::pretreatVehicleExperience(UserRequirementAfterPr
 		return PRETREAT_TICKET_TYPE_ERROR;
 		break;
 	}
+
+	return PRETREAT_TICKET_TYPE_ERROR;
 }
 
 PretreatStatue UserRequirement::dealPretreatVehicleExperienceStatue(PretreatStatue statue_code)
@@ -281,43 +290,57 @@ PretreatStatue UserRequirement::dealPretreatVehicleExperienceStatue(PretreatStat
 
 PretreatStatue UserRequirement::pretreatTransitType(UserRequirementAfterPretreat& requirement)
 {
-	if (this->transit_type == "" || this->transit_type == nullptr)
+	for (int i = 0; i < this->city_num; i++)
 	{
-		this->transit_type = (char*)"直达";
+		if (this->transit_type[i] == "" || this->transit_type[i] == nullptr)
+		{
+			this->transit_type[i] = (char*)"直达";
+		}
+
+		if (this->transit_type[i] == "直达")
+		{
+			requirement.transitType[i] = DIRECT;
+		}
+		else if (this->transit_type[i] == "中转")
+		{
+			requirement.transitType[i] = TRANS;
+		}
+		else if (this->transit_type[i] == "混合中转")
+		{
+			//只有交通工具指定为ALL才能混合中转
+			if (requirement.vehicleType[i] == ALL_VEHICLE)
+				requirement.transitType[i] = FIX_TRANS;
+			else
+				return PRETREAT_transit_TYPE_ERROR_FIX_ONLY_WHEN_VEHICLE_ALL;
+		}
+		else if (this->transit_type[i] == "任意")
+		{
+			requirement.transitType[i] = ALL_TRANSIT;
+		}
+		else
+		{
+			return PRETREAT_transit_TYPE_ERROR_TYPE;
+		}
 	}
 
-	if (this->transit_type == "直达")
-	{
-		requirement.transitType = DIRECT;
-	}
-	else if(this->transit_type=="中转")
-	{
-		requirement.transitType = TRANS;
-	}
-	else if (this->transit_type == "混合中转")
-	{
-		requirement.transitType = FIX_TRANS;
-	}
-	else
-	{
-		return PRETREAT_TRANSIST_TYPE_ERROR_TYPE;
-	}
-	return PretreatTransitTypeStatus::PRETREAT_TRANSIST_TYPE_SUCCEED;
+	return PretreatTransitTypeStatus::PRETREAT_transit_TYPE_SUCCEED;
 }
 
 PretreatStatue UserRequirement::dealPretreatTransitTypeStatue(PretreatStatue statue_code)
 {
 	switch (statue_code)
 	{
-	case PRETREAT_TRANSIST_TYPE_ERROR_TYPE:
+	case PRETREAT_transit_TYPE_ERROR_TYPE:
 		//TODO:中转类型字符串错误
-		return PRETREAT_TRANSIST_TYPE_FAILED_FINALL;
+		return PRETREAT_transit_TYPE_FAILED_FINALL;
 		break;
-	case PretreatTransitTypeStatus::PRETREAT_TRANSIST_TYPE_SUCCEED:
-		return PretreatStatus::PRETREAT_TRANSIST_TYPE_SUCCEED_FINALL;
+	case PretreatTransitTypeStatus::PRETREAT_transit_TYPE_SUCCEED:
+		return PretreatStatus::PRETREAT_transit_TYPE_SUCCEED_FINALL;
 		break;
+	case PRETREAT_transit_TYPE_ERROR_FIX_ONLY_WHEN_VEHICLE_ALL:
+		return PRETREAT_transit_TYPE_SUCCEED_FINALL;
 	default:
-		return PRETREAT_TRANSIST_TYPE_FAILED_FINALL;
+		return PRETREAT_transit_TYPE_FAILED_FINALL;
 		break;
 	}
 }
@@ -385,6 +408,7 @@ PretreatStatue UserRequirement::pretreatRemark(UserRequirementAfterPretreat& req
 		return REMARK_PRETREAT_END;
 		break;
 	}
+	return PRETREAT_REMARK_FAILED;
 }
 
 PretreatStatue UserRequirement::dealPretreatRemarkStatue(PretreatStatue statue_code)

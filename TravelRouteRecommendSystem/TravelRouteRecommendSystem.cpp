@@ -38,7 +38,7 @@ int main()
 
 	char** vehicle_type=new char*[2];
 	vehicle_type[0] = (char*)"任意";
-	vehicle_type[1] = (char*)"铁路";
+	vehicle_type[1] = (char*)"火车";
 
 	char* travel_type = (char*)"商务出差";
 
@@ -65,7 +65,8 @@ int main()
 		distances,
 		remark
 	);
-	user_requirement.pretreatUserRequirement();
+	GetRoute get_route(user_requirement);
+	get_route.getSQLQuery(1, vector<string>(), get_route.getTableName(1), get_route.getWhereSentenceKeyValue(1));
 	cout << "ok";
 
 	delete[] start_cities;

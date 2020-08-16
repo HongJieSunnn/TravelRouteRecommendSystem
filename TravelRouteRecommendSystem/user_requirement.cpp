@@ -214,7 +214,7 @@ PretreatStatue UserRequirement::pretreatVehicleExperience(UserRequirementAfterPr
 		{
 			requirement.vehicleType[i] = ALL_VEHICLE;
 		}
-		else if (this->vehicle_type[i] == "ÌúÂ·")
+		else if (this->vehicle_type[i] == "»ð³µ")
 		{
 			requirement.vehicleType[i] = HSRC;
 		}

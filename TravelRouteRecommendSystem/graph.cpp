@@ -41,7 +41,7 @@ void Graph<T>::delNode(VertexData<T> node)
 }
 
 template<class T>
-void Graph<T>::addEdge(VertexData<T> start_node, VertexData<T> end_node, int weight)
+void Graph<T>::addEdge(VertexData<T> start_node, VertexData<T> end_node, Weight weight)
 {
 	if (!isNode(start_node) || !isNode(end_node))
 	{
@@ -83,7 +83,7 @@ void Graph<T>::delEdge(VertexData<T> start_node, VertexData<T> end_node)
 }
 
 template<class T>
-OperateGraphStatue Graph<T>::createGraph(VertexData<T>* vertex_datas, pair<VertexData<T>, VertexData<T>>* edges, int* weights)
+OperateGraphStatue Graph<T>::createGraph(VertexData<T>* vertex_datas, pair<VertexData<T>, VertexData<T>>* edges, Weight weights)
 {
 	if (this->vertex_nums == 0)
 	{

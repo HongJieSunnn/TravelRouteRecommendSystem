@@ -1,11 +1,16 @@
 #ifndef GETROUTE_H
 #define GETROUTE_H
 #include<unordered_map>
+#include<queue>
+#include<algorithm>
 #include"user_requirement.h"
 #include"init_mysql.h"
+#include"graph.h"
+#include"vehicle.h"
 //这是主要的类 用来获取最优路径
 //TODO 不知道要把它写成父类 然后直达 转车什么的继承 还是直接写一个通用方法 支持各种方式
 using std::unordered_map;
+using std::priority_queue;
 
 namespace GetRouteNameSpace
 {
@@ -57,11 +62,21 @@ class GetRoute
 {
 private:
 	UserRequirementAfterPretreat requirement;
+	Graph<string> graph;
+	VertexData<string>* vertex_datas;
+	pair<VertexData<string>, VertexData<string>>* edges;
+	priority_queue<Vehicle> weights;
 public:
 	GetRoute(UserRequirement requirement)
 	{
 		//TODO:后续封装dll时可以把UserRequirement requirement弄成一个全局变量
 		this->requirement = requirement.pretreatUserRequirement();
+	}
+
+	GetRoute(UserRequirementAfterPretreat requirement)
+	{
+		//TODO:后续封装dll时可以把UserRequirement requirement弄成一个全局变量
+		this->requirement = requirement;
 	}
 	~GetRoute()
 	{
@@ -80,19 +95,19 @@ public:
 		获取直达的交通工具信息
 	* 
 	*/
-	GetRouteNameSpace::GetDirectVehicleStatue getDirectVehicleInfor();
+	GetRouteNameSpace::GetDirectVehicleStatue getDirectVehicleInfor(string sql_query);
 
 	/*
 		获取中转的交通工具信息
 	*
 	*/
-	GetRouteNameSpace::GettransitVehicleStatue getTransitVehicleInfor();
+	GetRouteNameSpace::GettransitVehicleStatue getTransitVehicleInfor(string sql_query);
 
 	/*
 		获取混合的交通工具信息
 	*
 	*/
-	GetRouteNameSpace::GetFixVehicleStatue getFixVehicleInfor();
+	GetRouteNameSpace::GetFixVehicleStatue getFixVehicleInfor(string sql_query);
 
 	/*
 		根据requirement里的条件合成where
@@ -105,6 +120,12 @@ public:
 	* now_index:获得当前城市还有交通工具类型
 	*/
 	string getTableName(int now_index);
+
+	/*
+		通过requirement来获得合适的ORDER语句
+	* now_index:获得当前城市还有交通工具类型
+	*/
+	string getOrderSentence(int now_index);
 
 	/**
 		根据条件合成SQL语句

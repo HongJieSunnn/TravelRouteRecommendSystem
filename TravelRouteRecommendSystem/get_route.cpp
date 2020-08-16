@@ -10,31 +10,33 @@ GetRouteNameSpace::GetVehicleStatue GetRoute::getVechileInfor()
 
 	do
 	{
+		get_infor_failed = false;
+		requirement_changed = false;
 		for (int i = 0; i < cities_num; i++)
 		{
+			string sql_query=getSQLQuery(i, vector<string>(), getTableName(i), getWhereSentenceKeyValue(i));
 
+			switch (switch_on)
+			{
+			default:
+				break;
+			}
 		}
 	} while (get_infor_failed && requirement_changed);
 	return GetVehicleStatue::GET_VEHICLE_SUCCEED;
 }
 
-GetRouteNameSpace::GetDirectVehicleStatue GetRoute::getDirectVehicleInfor()
+GetRouteNameSpace::GetDirectVehicleStatue GetRoute::getDirectVehicleInfor(string sql_query)
 {
-	for (int i = 0; i < requirement.start_cities.size(); i++)
-	{
-		
-	}
-	
-
 	return GetDirectVehicleStatue::GET_DIRECT_VEHICLE_SUCCEED;
 }
 
-GetRouteNameSpace::GettransitVehicleStatue GetRoute::getTransitVehicleInfor()
+GetRouteNameSpace::GettransitVehicleStatue GetRoute::getTransitVehicleInfor(string sql_query)
 {
 	return GetRouteNameSpace::GettransitVehicleStatue();
 }
 
-GetRouteNameSpace::GetFixVehicleStatue GetRoute::getFixVehicleInfor()
+GetRouteNameSpace::GetFixVehicleStatue GetRoute::getFixVehicleInfor(string sql_query)
 {
 	return GetRouteNameSpace::GetFixVehicleStatue();
 }
@@ -54,21 +56,142 @@ unordered_map<string, string> GetRoute::getWhereSentenceKeyValue(int now_index)
 
 string GetRoute::getTableName(int now_index)
 {
-	{
-		string now_start_city = requirement.start_cities[now_index];
-		UserRequirementNamespace::VehicleTypeEnum now_vehicle_type = requirement.vehicleType[now_index];
+	string now_start_city = requirement.start_cities[now_index];
+	UserRequirementNamespace::VehicleTypeEnum now_vehicle_type = requirement.vehicleType[now_index];
 
-		switch (now_vehicle_type)
+	switch (now_vehicle_type)
+	{
+	case UserRequirementNamespace::HSRC:
+		now_start_city.append("火车");
+		break;
+	case UserRequirementNamespace::AIRPLANE:
+		now_start_city.append("航班");
+		break;
+	}
+	return now_start_city;
+}
+
+string GetRoute::getOrderSentence(int now_index)
+{
+	string sql_query = " ORDER BY ";
+
+	switch (requirement.timeType)
+	{
+	case UserRequirementNamespace::TIME_REGARDLESS:
+		switch (requirement.priceType)
 		{
-		case UserRequirementNamespace::HSRC:
-			now_start_city.append("铁路");
+		case UserRequirementNamespace::PRICE_AFFORDABLE:
+		case UserRequirementNamespace::PRICE_REGARDLESS://时间 价格都最低优先
+			if (this->requirement.vehicleType[now_index] == UserRequirementNamespace::HSRC)
+			{
+				sql_query.append("cost_time,second_class_seat_price;");
+			}
+			else if (this->requirement.vehicleType[now_index] == UserRequirementNamespace::AIRPLANE)
+			{
+				sql_query.append("cost_time,ticket_price;");
+			}
 			break;
-		case UserRequirementNamespace::AIRPLANE:
-			now_start_city.append("航班");
+		case UserRequirementNamespace::PRICE_CHEAP://先按价格低排序
+			if (this->requirement.vehicleType[now_index] == UserRequirementNamespace::HSRC)
+			{
+				sql_query.append("second_class_seat_price,cost_time;");
+			}
+			else if (this->requirement.vehicleType[now_index] == UserRequirementNamespace::AIRPLANE)
+			{
+				sql_query.append("ticket_price,cost_time;");
+			}
+			break;
+		case UserRequirementNamespace::PRICE_EXPENSIVE:
+			if (this->requirement.vehicleType[now_index] == UserRequirementNamespace::HSRC)
+			{
+				sql_query.append("second_class_seat_price DESC,cost_time;");
+			}
+			else if (this->requirement.vehicleType[now_index] == UserRequirementNamespace::AIRPLANE)
+			{
+				sql_query.append("ticket_price DESC,cost_time;");
+			}
 			break;
 		}
-		return now_start_city;
+		break;
+	case UserRequirementNamespace::TIME_FIRST:
+		switch (requirement.priceType)
+		{
+		case UserRequirementNamespace::PRICE_REGARDLESS://时间 价格都最低优先
+			sql_query.append("cost_time,start_time;");
+			break;
+		case UserRequirementNamespace::PRICE_CHEAP://先按价格低排序
+			if (this->requirement.vehicleType[now_index] == UserRequirementNamespace::HSRC)
+			{
+				sql_query.append("cost_time,second_class_seat_price,start_time;");
+			}
+			else if (this->requirement.vehicleType[now_index] == UserRequirementNamespace::AIRPLANE)
+			{
+				sql_query.append("cost_time,ticket_price,start_time;");
+			}
+			break;
+		case UserRequirementNamespace::PRICE_AFFORDABLE:
+			if (this->requirement.vehicleType[now_index] == UserRequirementNamespace::HSRC)
+			{
+				sql_query.append("cost_time,start_time,second_class_seat_price;");
+			}
+			else if (this->requirement.vehicleType[now_index] == UserRequirementNamespace::AIRPLANE)
+			{
+				sql_query.append("cost_time,start_time,ticket_price;");
+			}
+			break;
+		case UserRequirementNamespace::PRICE_EXPENSIVE:
+			if (this->requirement.vehicleType[now_index] == UserRequirementNamespace::HSRC)
+			{
+				sql_query.append("cost_time,second_class_seat_price DESC,start_time;");
+			}
+			else if (this->requirement.vehicleType[now_index] == UserRequirementNamespace::AIRPLANE)
+			{
+				sql_query.append("cost_time,ticket_price DESC,start_time;");
+			}
+			break;
+		}
+		break;
+	case UserRequirementNamespace::TIME_BETTER:
+		switch (requirement.priceType)
+		{
+		case UserRequirementNamespace::PRICE_REGARDLESS://时间 价格都最低优先
+			sql_query.append("cost_time;");
+			break;
+		case UserRequirementNamespace::PRICE_CHEAP://先按价格低排序
+			if (this->requirement.vehicleType[now_index] == UserRequirementNamespace::HSRC)
+			{
+				sql_query.append("second_class_seat_price,cost_time;");
+			}
+			else if (this->requirement.vehicleType[now_index] == UserRequirementNamespace::AIRPLANE)
+			{
+				sql_query.append("ticket_price,cost_time;");
+			}
+			break;
+		case UserRequirementNamespace::PRICE_AFFORDABLE:
+			if (this->requirement.vehicleType[now_index] == UserRequirementNamespace::HSRC)
+			{
+				sql_query.append("cost_time,second_class_seat_price;");
+			}
+			else if (this->requirement.vehicleType[now_index] == UserRequirementNamespace::AIRPLANE)
+			{
+				sql_query.append("cost_time,ticket_price;");
+			}
+			break;
+		case UserRequirementNamespace::PRICE_EXPENSIVE:
+			if (this->requirement.vehicleType[now_index] == UserRequirementNamespace::HSRC)
+			{
+				sql_query.append("second_class_seat_price DESC,cost_time;");
+			}
+			else if (this->requirement.vehicleType[now_index] == UserRequirementNamespace::AIRPLANE)
+			{
+				sql_query.append("ticket_price DESC,cost_time;");
+			}
+			break;
+		}
+		break;
 	}
+
+	return sql_query;
 }
 
 string GetRoute::getSQLQuery(int now_index,vector<string> columns, string table_name, unordered_map<string, string> where_sentence)
@@ -122,6 +245,8 @@ string GetRoute::getSQLQuery(int now_index,vector<string> columns, string table_
 		sql_query.append("arrival_time<=");
 		sql_query.append(InitMySQL::toSQLString(where_sentence["arrival_time"]));
 	}
+	
+	sql_query.append(getOrderSentence(now_index));
 
 	return sql_query;
 }

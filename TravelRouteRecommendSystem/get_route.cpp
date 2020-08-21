@@ -14,11 +14,16 @@ GetRouteNameSpace::GetVehicleStatue GetRoute::getVechileInfor()
 		requirement_changed = false;
 		for (int i = 0; i < cities_num; i++)
 		{
-			string sql_query=getSQLQuery(i, vector<string>(), getTableName(i), getWhereSentenceKeyValue(i));
-
-			switch (switch_on)
+			switch (this->requirement.transitType[i])
 			{
-			default:
+			case UserRequirementNamespace::DIRECT:
+				getDirectVehicleInfor(getSQLQueryVector(i));
+				break;
+			case UserRequirementNamespace::TRANS:
+				break;
+			case UserRequirementNamespace::FIX_TRANS:
+				break;
+			case UserRequirementNamespace::ALL_TRANSIT:
 				break;
 			}
 		}
@@ -26,17 +31,17 @@ GetRouteNameSpace::GetVehicleStatue GetRoute::getVechileInfor()
 	return GetVehicleStatue::GET_VEHICLE_SUCCEED;
 }
 
-GetRouteNameSpace::GetDirectVehicleStatue GetRoute::getDirectVehicleInfor(string sql_query)
+GetRouteNameSpace::GetDirectVehicleStatue GetRoute::getDirectVehicleInfor(vector<string> sql_query)
 {
 	return GetDirectVehicleStatue::GET_DIRECT_VEHICLE_SUCCEED;
 }
 
-GetRouteNameSpace::GettransitVehicleStatue GetRoute::getTransitVehicleInfor(string sql_query)
+GetRouteNameSpace::GettransitVehicleStatue GetRoute::getTransitVehicleInfor(vector<string> sql_query)
 {
 	return GetRouteNameSpace::GettransitVehicleStatue();
 }
 
-GetRouteNameSpace::GetFixVehicleStatue GetRoute::getFixVehicleInfor(string sql_query)
+GetRouteNameSpace::GetFixVehicleStatue GetRoute::getFixVehicleInfor(vector<string> sql_query)
 {
 	return GetRouteNameSpace::GetFixVehicleStatue();
 }
@@ -249,4 +254,30 @@ string GetRoute::getSQLQuery(int now_index,vector<string> columns, string table_
 	sql_query.append(getOrderSentence(now_index));
 
 	return sql_query;
+}
+
+vector<string> GetRoute::getSQLQueryVector(int now_index)
+{
+	if (this->requirement.vehicleType[now_index] == UserRequirementNamespace::ALL_VEHICLE)
+	{
+		UserRequirementAfterPretreat temp_requirement1 = this->requirement;
+		UserRequirementAfterPretreat temp_requirement2 = this->requirement;
+		temp_requirement1.vehicleType[now_index] = UserRequirementNamespace::HSRC;
+		temp_requirement2.vehicleType[now_index] = UserRequirementNamespace::AIRPLANE;
+		GetRoute temp_get_route_instance_1(temp_requirement1);
+		GetRoute temp_get_route_instance_2(temp_requirement2);
+
+		return vector<string>
+		{
+			temp_get_route_instance_1.getSQLQuery(now_index, vector<string>(), getTableName(now_index), getWhereSentenceKeyValue(now_index)),
+			temp_get_route_instance_2.getSQLQuery(now_index, vector<string>(), getTableName(now_index), getWhereSentenceKeyValue(now_index))
+		};
+	}
+	else
+	{
+		return vector<string>
+		{
+			getSQLQuery(now_index, vector<string>(), getTableName(now_index), getWhereSentenceKeyValue(now_index))
+		};
+	}
 }

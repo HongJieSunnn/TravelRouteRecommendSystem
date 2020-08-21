@@ -93,21 +93,21 @@ public:
 
 	/*
 		获取直达的交通工具信息
-	* 
+	* sql_query:要执行的sql语句数组
 	*/
-	GetRouteNameSpace::GetDirectVehicleStatue getDirectVehicleInfor(string sql_query);
+	GetRouteNameSpace::GetDirectVehicleStatue getDirectVehicleInfor(vector<string> sql_query);
 
 	/*
 		获取中转的交通工具信息
-	*
+	* sql_query:要执行的sql语句数组
 	*/
-	GetRouteNameSpace::GettransitVehicleStatue getTransitVehicleInfor(string sql_query);
+	GetRouteNameSpace::GettransitVehicleStatue getTransitVehicleInfor(vector<string> sql_query);
 
 	/*
 		获取混合的交通工具信息
-	*
+	* sql_query:要执行的sql语句数组
 	*/
-	GetRouteNameSpace::GetFixVehicleStatue getFixVehicleInfor(string sql_query);
+	GetRouteNameSpace::GetFixVehicleStatue getFixVehicleInfor(vector<string> sql_query);
 
 	/*
 		根据requirement里的条件合成where
@@ -137,6 +137,12 @@ public:
 	*		至于还有一些什么order 或者根据转车不转车判断等于还是不等于 直接访问requirement成员来判断就好了
 	*/
 	string getSQLQuery(int now_index, vector<string> columns, string table_name, unordered_map<string, string> where_sentence);
+
+	/*
+		获取SQL语句数据传入getXxxxVehicleInfor方法中
+	* now_index:当前下标
+	*/
+	vector<string> getSQLQueryVector(int now_index);
 };
 
 #endif // !GETROUTE_H

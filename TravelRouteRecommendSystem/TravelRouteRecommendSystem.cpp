@@ -14,11 +14,12 @@ using std::string;
 using std::cout;
 using std::cin;
 void initDB();
+void initRedis();
 
 int main()
 {
 	initDB();//初始化数据库
-	InitRedis::initRedis();//初始化redis
+	initRedis();//初始化redis
 
 	//新建一个UserRequirement对象测试一下
 	char** start_cities = new char* [2];
@@ -35,11 +36,15 @@ int main()
 
 	char* arrive_time = nullptr;
 
-	char* vehicle_type = (char*)"任意";
+	char** vehicle_type=new char*[2];
+	vehicle_type[0] = (char*)"任意";
+	vehicle_type[1] = (char*)"火车";
 
 	char* travel_type = (char*)"商务出差";
 
-	char* transist_type = (char*)"直达";
+	char** transit_type=new char*[2];
+	transit_type[0] = (char*)"任意";
+	transit_type[1] = (char*)"直达";
 
 	char* remark = (char*)"我要非常舒适的体验";
 
@@ -56,17 +61,26 @@ int main()
 		arrive_time,
 		vehicle_type,
 		travel_type,
-		transist_type,
+		transit_type,
 		distances,
 		remark
 	);
-	user_requirement.pretreatUserRequirement();
+	GetRoute get_route(user_requirement);
+	get_route.getSQLQuery(1, vector<string>(), get_route.getTableName(1), get_route.getWhereSentenceKeyValue(1));
 	cout << "ok";
+
+	delete[] start_cities;
+	delete[] arrive_cities;
+	delete[] vehicle_type;
+	delete[] transit_type;
+	delete[] distances;
 }
 
 void initDB()
 {
-	
+	/*string pwd;
+	cout << "请输入数据库密码:";
+	cin >> pwd;*/
 	if (!DBStatus::dealInitMySQLError(InitMySQL::initGlobleMySQL("cdb-j6k4d9vs.bj.tencentcdb.com", "user", "asdf3485", "tourism-recommend-sys-trafficimfor", 10255, "gbk")))
 	{
 		cout << "初始化数据库错误\n";
@@ -75,6 +89,20 @@ void initDB()
 	else
 	{
 		cout << "初始化数据库成功\n\n";
-		system("cls");
+		cout << "当前消耗时间:" << clock() << "ms" << "\n\n";
+	}
+}
+
+void initRedis()
+{
+	if (!dealInitRedisError(InitRedis::initRedis()))
+	{
+		cout << "初始化Redis错误\n";
+		exit(0);
+	}
+	else
+	{
+		cout << "初始化Redis成功\n\n";
+		cout << "当前消耗时间:" << clock() <<"ms"<< "\n\n";
 	}
 }

@@ -7,11 +7,14 @@
 #include<unordered_map>
 #include<queue>
 #include<algorithm>
+#include<queue>
+#include"vehicle.h"
 using std::vector;
 using std::unordered_map;
 using std::pair;
 using std::unique_ptr;
 using std::queue;
+using std::priority_queue;
 using std::max;
 using std::min;
 using std::sort;
@@ -26,7 +29,8 @@ namespace
 	//节点编号
 	using VertexIndex = int;
 	//权重
-	using Weight = int;
+	template<class T>
+	using Weight = T;
 	//节点列表类型
 	template<class T>
 	using VertexList = vector<T>;
@@ -105,7 +109,7 @@ private:
 	* end_node:结束点的编号 
 	* weight:权重
 	*/
-	void addEdge(VertexData<T> start_node, VertexData<T> end_node, int weight = 1);
+	void addEdge(VertexData<T> start_node, VertexData<T> end_node, Weight weight = NULL);
 
 	/*
 		删除边
@@ -114,7 +118,6 @@ private:
 	*/
 	void delEdge(VertexData<T> start_node, VertexData<T> end_node);
 public:
-	Graph() {}
 	~Graph() {}
 	/*
 		构造函数
@@ -132,6 +135,6 @@ public:
 		this->matrix_edge_table = vector<vector<Weight>>(vertex_nums, vector<Weight>(vertex_nums, 0));
 	}
 
-	OperateGraphStatue createGraph(VertexData<T>* vertex_datas, pair<VertexData<T>, VertexData<T>>* edges, int* weights = nullptr);
+	OperateGraphStatue createGraph(vector<VertexData<T>> vertex_datas, vector<pair<VertexData<T>, VertexData<T>>> edges, Weight weights = nullptr);
 };
 #endif // GRAPH_H

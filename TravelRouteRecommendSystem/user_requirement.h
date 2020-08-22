@@ -48,7 +48,7 @@ namespace UserRequirementNamespace
 	*/
 	enum VehicleTypeEnum
 	{
-		ALL = 1,
+		ALL_VEHICLE = 1,
 		HSRC,
 		AIRPLANE,
 	};
@@ -77,6 +77,12 @@ namespace UserRequirementNamespace
 		DIRECT = 1,
 		TRANS,
 		FIX_TRANS,
+		ALL_TRANSIT//包含直达和中转 但是不包含FIX
+		/*
+		* tip:
+		* 若用户选择DIRECT 但是没有直达 那么就提示 没有直达
+		* 而如果是ALL_TRANSIT 才需要如果没直达就弄转车 否则全部显示
+		*/
 	};
 	/*
 		预处理状态码 方便后续操作
@@ -96,8 +102,8 @@ namespace UserRequirementNamespace
 		PRETREAT_TRAVELTYPE_SUCCEED,
 		PRETREAT_VEHICLE_EXPERIENCE_FAILED,
 		PRETREAT_VEHICLE_EXPERIENCE_SUCCEED,
-		PRETREAT_TRANSIST_TYPE_FAILED_FINALL,
-		PRETREAT_TRANSIST_TYPE_SUCCEED_FINALL,
+		PRETREAT_transit_TYPE_FAILED_FINALL,
+		PRETREAT_transit_TYPE_SUCCEED_FINALL,
 	};
 	enum PretreatTimeStatus
 	{
@@ -139,9 +145,10 @@ namespace UserRequirementNamespace
 	};
 	enum PretreatTransitTypeStatus
 	{
-		PRETREAT_TRANSIST_TYPE_ERROR,
-		PRETREAT_TRANSIST_TYPE_SUCCEED,
-		PRETREAT_TRANSIST_TYPE_ERROR_TYPE,
+		PRETREAT_transit_TYPE_ERROR,
+		PRETREAT_transit_TYPE_SUCCEED,
+		PRETREAT_transit_TYPE_ERROR_TYPE,
+		PRETREAT_transit_TYPE_ERROR_FIX_ONLY_WHEN_VEHICLE_ALL,
 	};
 
 };
@@ -166,12 +173,12 @@ struct UserRequirementAfterPretreat
 	vector<string> arrive_cities;
 	MyTime start_time;
 	MyTime arrive_time;
+	TravelType travelType;
 	TimeType timeType;
 	PriceType priceType;
 	TicketType ticketType;
-	VehicleType vehicleType;
-	TravelType travelType;
-	TransitType transitType;
+	vector<VehicleType> vehicleType;
+	vector <TransitType> transitType;
 };
 
 /*
@@ -198,6 +205,8 @@ struct UserRequirementAfterPretreat
 	*distances:通过调用地图api获取每两个城市之间直线距离 从而判断交通工具推荐
 	*remark:备注
 */
+
+//即使用户有些需求没给出 但是后端给C++时 就要把没给的用默认补全 因为C#操作方便些
 class UserRequirement
 {
 	char** start_cities;
@@ -205,16 +214,17 @@ class UserRequirement
 	int city_num;
 	char* start_time;
 	char* arrive_time;
-	char* vehicle_type;
 	char* travel_type;
-	char* transit_type;
+	char** vehicle_type;
+	char** transit_type;
 	int* distances;
 	char* remark;
 
 public:
-	UserRequirement() {};
-
-	UserRequirement(char** start_cities, char** arrive_cities, int city_num, char* start_time, char* arrive_time, char* vehicle_type, char* travel_type, char* transit_type, int* distances, char* remark) :
+	UserRequirement() 
+	{
+	};
+	UserRequirement(char** start_cities, char** arrive_cities, int city_num, char* start_time, char* arrive_time, char** vehicle_type, char* travel_type, char** transit_type, int* distances, char* remark) :
 		start_cities(start_cities),
 		arrive_cities(arrive_cities),
 		city_num(city_num),
@@ -230,7 +240,7 @@ public:
 	/*
 		预处理用户需求 得到推荐的方式(例如时间 中转方式 钱等等) 更方便后续使用
 	*/
-	UserRequirementAfterPretreat pretreatUserRequirement() noexcept;
+	UserRequirementAfterPretreat pretreatUserRequirement();
 protected:
 	/*
 		预处理城市 包括开始城市和结束城市

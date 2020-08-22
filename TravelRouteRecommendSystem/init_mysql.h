@@ -100,6 +100,15 @@ public:
 	*/
 	static MYSQL_RES* execSQLToGetResult(string SQL);
 
+	/*
+	* 给字符串加上''用来sql查询
+	*/
+	static string toSQLString(string str)
+	{
+		string single = "'";
+		return single + str + single;
+	}
+
 	//~InitMySQL();
 };
 

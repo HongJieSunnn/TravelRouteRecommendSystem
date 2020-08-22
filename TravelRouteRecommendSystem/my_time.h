@@ -3,6 +3,7 @@
 #include<string>
 #include<time.h>
 using std::string;
+using std::to_string;
 namespace
 {
 	enum TimeFormatEnum
@@ -19,16 +20,21 @@ namespace
 class MyTime
 {
 public:
+	//创建空的对象
+	MyTime()
+	{
+		this->format = 0;//为0说明，空的，也就是没有给出时间
+	}
 	int year;
 	int month;
 	int day;
 	int hour;
 	int minute;
 	int format;
-
 	/*
 		计算两个时间间的间隔 返回单位分钟
 		*time:要计算的时间点
+	Tip:this.time - time
 	*/
 	int costTime(MyTime time);
 
@@ -41,6 +47,7 @@ public:
 		costTime的一个重载形式 需要两个时间
 		*start_time:开始时间
 		*end_time:结束时间
+	Tip:end_time-start_time
 	*/
 	static int costTime(MyTime start_time, MyTime end_time);
 
@@ -62,6 +69,11 @@ public:
 		不会判断符号间是否为数字 因为默认必须是 其他地方会处理好
 	*/
 	static bool conformTimeFormatOrNot(string time,int time_format);
+
+	/*
+	*根据MyTime的成员变量返回时间的字符串 可以指定返回的格式
+	*/
+	string myTimeToStringByInt(int time_format);
 };
 
 #endif // !MY_TIME_H

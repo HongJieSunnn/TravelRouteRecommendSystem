@@ -25,7 +25,7 @@ tm MyTime::myTimeToTmTime(MyTime time)
 
 int MyTime::costTime(MyTime start_time, MyTime end_time)
 {
-	return start_time.costTime(end_time);
+	return end_time.costTime(start_time);
 }
 
 MyTime MyTime::stringToMyTime(string time,int time_format)

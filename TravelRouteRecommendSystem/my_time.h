@@ -34,6 +34,7 @@ public:
 	/*
 		计算两个时间间的间隔 返回单位分钟
 		*time:要计算的时间点
+	Tip:this.time - time
 	*/
 	int costTime(MyTime time);
 
@@ -46,6 +47,7 @@ public:
 		costTime的一个重载形式 需要两个时间
 		*start_time:开始时间
 		*end_time:结束时间
+	Tip:end_time-start_time
 	*/
 	static int costTime(MyTime start_time, MyTime end_time);
 

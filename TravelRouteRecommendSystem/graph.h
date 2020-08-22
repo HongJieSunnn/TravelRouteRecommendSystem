@@ -135,6 +135,6 @@ public:
 		this->matrix_edge_table = vector<vector<Weight>>(vertex_nums, vector<Weight>(vertex_nums, 0));
 	}
 
-	OperateGraphStatue createGraph(VertexData<T>* vertex_datas, pair<VertexData<T>, VertexData<T>>* edges, Weight weights = nullptr);
+	OperateGraphStatue createGraph(vector<VertexData<T>> vertex_datas, vector<pair<VertexData<T>, VertexData<T>>> edges, Weight weights = nullptr);
 };
 #endif // GRAPH_H

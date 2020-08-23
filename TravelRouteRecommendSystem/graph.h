@@ -57,12 +57,12 @@ namespace
 		1. 通过标号获取编号 用vertex_list_map[标号]
 		2. 通过编号获取标号 用vertex_list[编号]
 */
-template<class T>
+template<class T,class WeightType>
 class Graph
 {
 private:
 	VertexList<T> vertex_list;
-	vector<vector<Weight>> matrix_edge_table;
+	vector<vector<Weight<WeightType>>> matrix_edge_table;
 	unordered_map<VertexData<T>, VertexIndex> vertex_list_map;
 	int edge_nums;
 	int vertex_nums;
@@ -74,7 +74,7 @@ private:
 	*/
 	inline bool isEdge(VertexIndex start_index, VertexIndex end_index)
 	{
-		if (this->matrix_edge_table[start_index][end_index] >= 1)
+		if (!this->matrix_edge_table[start_index][end_index].empty())
 			return true;
 		return false;
 	}
@@ -109,7 +109,7 @@ private:
 	* end_node:结束点的编号 
 	* weight:权重
 	*/
-	void addEdge(VertexData<T> start_node, VertexData<T> end_node, Weight weight = NULL);
+	void addEdge(VertexData<T> start_node, VertexData<T> end_node, Weight<WeightType> weight = NULL);
 
 	/*
 		删除边
@@ -132,9 +132,9 @@ public:
 		this->edge_nums = edge_nums;
 		this->vertex_nums = vertex_nums;
 		this->vertex_list = VertexList<T>(vertex_nums);
-		this->matrix_edge_table = vector<vector<Weight>>(vertex_nums, vector<Weight>(vertex_nums, 0));
+		this->matrix_edge_table = vector<vector<Weight<WeightType>>>(vertex_nums, vector<Weight<WeightType>>(vertex_nums));
 	}
 
-	OperateGraphStatue createGraph(vector<VertexData<T>> vertex_datas, vector<pair<VertexData<T>, VertexData<T>>> edges, Weight weights = nullptr);
+	OperateGraphStatue createGraph(vector<VertexData<T>> vertex_datas, vector<pair<VertexData<T>, VertexData<T>>> edges, vector<Weight<WeightType>> weights);
 };
 #endif // GRAPH_H

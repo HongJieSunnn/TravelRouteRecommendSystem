@@ -17,34 +17,38 @@ UserRequirementAfterPretreat UserRequirement::pretreatUserRequirement()
 	*/
 	if ((PretreatStatus)pretreatCities(requirement) == PretreatStatus::PRETREAT_CITIES_FAILED)
 	{
-		throw "预处理城市时出现错误";
+		throw new exception("预处理城市时出现错误");
 	}
 
 	if ((PretreatStatus)pretreatTime(requirement) == PretreatStatus::PRETREAT_TIME_FAILED)
 	{
-		throw "预处理时间时出现错误";
+		throw new exception("预处理时间时出现错误");
 	}
 
 	if ((PretreatStatus)dealPretreatTravelTypeStatue(pretreatTravelType(requirement)) == PretreatStatus::PRETREAT_TRAVELTYPE_FAILED)
 	{
-		throw "预处理出游方式时出现错误";
+		throw new exception("预处理出游方式时出现错误");
 	}
 
 	if ((PretreatStatus)dealPretreatRemarkStatue(pretreatRemark(requirement)) == PretreatStatus::PRETREAT_REMARK_FAILED)
 	{
-		throw "预处理备注时出现错误";
+		throw new exception("预处理备注时出现错误");
 	}
 
 	if ((PretreatStatus)dealPretreatVehicleExperienceStatue(pretreatVehicleExperience(requirement)) == PretreatStatus::PRETREAT_VEHICLE_EXPERIENCE_FAILED)
 	{
-		throw "预处理交通体验时出现错误";
+		throw new exception("预处理交通体验时出现错误");
 	}
 
 	if ((PretreatStatus)dealPretreatTransitTypeStatue(pretreatTransitType(requirement)) == PretreatStatus::PRETREAT_transit_TYPE_FAILED_FINALL)
 	{
-		throw "预处理中转方式时出现错误";
+		throw new exception("预处理中转方式时出现错误");
 	}
 
+	if ((PretreatStatus)dealPretreatDistancesStatue(pretreatDistances(requirement)) == PretreatStatus::PRETREAT_DISTANCES_ERROR_FINALL)
+	{
+		throw new exception("预处理距离时出现错误");
+	}
 	return requirement;
 }
 
@@ -483,4 +487,25 @@ PretreatStatue UserRequirement::toDealPretreatRemarkNeeds(UserRequirementAfterPr
 		}
 	}
 	return PRETREAT_REMARK_NEEDS_SUCCEED;
+}
+
+PretreatStatue UserRequirement::dealPretreatDistancesStatue(PretreatStatue statue_code)
+{
+	if (statue_code != PRETREAT_DISTANCES_SUCCEED)
+	{
+		return PRETREAT_DISTANCES_ERROR_FINALL;
+	}
+	return PRETREAT_DISTANCES_SUCCEED_FINALL;
+}
+
+PretreatStatue UserRequirement::pretreatDistances(UserRequirementAfterPretreat& requirement)
+{
+	if (this->distances == nullptr)
+		return PRETREAT_DISTANCES_ERROR;
+	requirement.distances = vector<int>(city_num);
+	for (int i = 0; i < this->city_num; i++)
+	{
+		requirement.distances[i] = distances[i];
+	}
+	return PRETREAT_DISTANCES_SUCCEED;
 }

@@ -6,6 +6,7 @@
 #include"user_requirement.h"
 #include"init_mysql.h"
 #include"graph.h"
+#include"graph.cpp"
 #include"vehicle.h"
 //这是主要的类 用来获取最优路径
 //TODO 不知道要把它写成父类 然后直达 转车什么的继承 还是直接写一个通用方法 支持各种方式
@@ -15,9 +16,19 @@ using std::make_heap;
 using std::pop_heap;
 using std::push_heap;
 using std::sort_heap;
+using std::sort;
+using std::to_string;
 
 namespace GetRouteNameSpace
 {
+	/*
+		创建图时的状态枚举
+	*/
+	enum class CreateGraphStatue
+	{
+		CREATE_GRAPH_FAILED,
+		CREATE_GRAPH_SUCCEED
+	};
 	/*
 		获取路线的状态枚举
 	*/
@@ -31,7 +42,11 @@ namespace GetRouteNameSpace
 	enum class GetVehicleStatue
 	{
 		GET_VEHICLE_FAILED,
-		GET_VEHICLE_SUCCEED
+		GET_VEHICLE_SUCCEED,
+		GET_DIRECT_VEHICLE_FAILED,
+		GET_TRANSIT_VEHICLE_FAILED,
+		GET_FIX_VEHICLE_FAILED,
+		GET_ALL_TRANSIT_VEHICLE_FAILED
 	};
 	/*
 		获取直达交通工具的状态枚举
@@ -52,7 +67,8 @@ namespace GetRouteNameSpace
 		SELECT_RESULT_NO_FIRST_ROUTE,
 		SELECT_RESULT_NO_SECOND_ROUTE,
 		GET_ONE_SECOND_ROUTE_INFOR_SUCCEED,
-		GET_TRANSIT_VEHICLE__GET_FAILED_SECOND_ROUTE_ERROR
+		GET_TRANSIT_VEHICLE__GET_FAILED_SECOND_ROUTE_ERROR,
+		SELECT_RESULT_NO_TABLE_EXIST
 	};
 	/*
 		获取混合交通工具的状态枚举
@@ -60,25 +76,77 @@ namespace GetRouteNameSpace
 	enum class GetFixVehicleStatue
 	{
 		GET_FIX_VEHICLE_FAILED,
-		GET_FIX_VEHICLE_SUCCEED
+		GET_FIX_VEHICLE_SUCCEED,
+		SELECT_RESULT_NO_FIRST_ROUTE,
+		SELECT_RESULT_NO_SECOND_ROUTE,
+		GET_ONE_SECOND_ROUTE_INFOR_SUCCEED,
+		GET_TRANSIT_VEHICLE__GET_FAILED_SECOND_ROUTE_ERROR
 	};
 	/*
 		获取任意中转交通工具的状态枚举
 	*/
 	enum class GetAllTransitVehicleStatue
 	{
-
+		GET_ALL_TRANSIT_VEHICLE_FAILED,
+		GET_ALL_TRANSIT_VEHICLE_SUCCEED,
+		DIRECT_EMPTY,
+		TRANSIT_EMPTY
 	};
+
+	auto getTimeOfVehicleOneRoute = [](vector<Vehicle*> route)->int
+	{
+		int size = route.size();
+		string type = NULL;
+		//直达
+		if (size == 1)
+		{
+			type = route[0]->getVehicleType();
+			return MyTime::costTime(MyTime::stringToMyTime(route[0]->get_start_time(), HH_MM), MyTime::stringToMyTime(route[0]->get_arrival_time(), HH_MM));
+		}
+		//中转
+		int res = 0;
+		for (int i = 0; i < size - 1; i++)
+		{
+			type = route[i]->getVehicleType();
+			res += MyTime::costTime(MyTime::stringToMyTime(route[i]->get_start_time(), HH_MM), MyTime::stringToMyTime(route[i]->get_arrival_time(), HH_MM)) +
+				MyTime::costTime(MyTime::stringToMyTime(route[i]->get_arrival_time(), HH_MM), MyTime::stringToMyTime(route[i + 1]->get_start_time(), HH_MM)) +
+				MyTime::costTime(MyTime::stringToMyTime(route[i + 1]->get_start_time(), HH_MM), MyTime::stringToMyTime(route[i + 1]->get_arrival_time(), HH_MM));
+		}
+		return res;
+	};
+
+	auto getPriceOfVehicleOneRoute = [](vector<Vehicle*> route)->float
+	{
+		float res = 0;
+		string type = NULL;
+		for (int i = 0; i < route.size(); i++)
+		{
+			type = route[i]->getVehicleType();
+
+			if (type == HSRC_TYPE)
+			{
+				res += atof(route[i]->get_second_class_seat_price().c_str());
+			}
+
+			if (type == AIRPLANE_TYPE)
+			{
+				res += atof(route[i]->get_ticket_price().c_str());
+			}
+		}
+
+		return res;
+	};
+
 	//同种类型的lambda表达式 用来给优先队列 时间优先 return false说明就是按照顺序 先进入的第一个出
 	auto sameTypeVehicleGreater_TimeFirst = [](vector<Vehicle*> route1,vector<Vehicle*> route2)-> bool
 	{
-		return false;
+		return true;
 	};
 
 	//同种非时间优先就按进入顺序排序 
 	auto sameTypeVehicleGreater=[](vector<Vehicle*> route1, vector<Vehicle*> route2)->bool
 	{
-		return false;
+		return true;
 	};
 
 	//不同种时间优先 适用于 all_vehicle
@@ -94,7 +162,7 @@ namespace GetRouteNameSpace
 
 		time1 > time2 ? time2 *= times : time1 *= times;
 
-		if (time1 > time2)
+		if (time1 < time2)
 			return true;
 		return false;
 	};
@@ -110,71 +178,9 @@ namespace GetRouteNameSpace
 		float times_of_price= price1 > price2 ? (price1 / price2) : (price2 / price1);//价钱倍数
 		float times_of_time= time1 > time2 ? (time1 / time2) : (time2 / time1);//时间倍数
 
-		if (times_of_price > (times_of_time-0.1))//价钱倍数比时间倍数-0.1大说明太贵了
+		if (times_of_price < (times_of_time-0.1))//价钱倍数比时间倍数-0.1大说明太贵了
 			return false;
 		return true;
-	};
-
-	auto getTimeOfVehicleOneRoute = [](vector<Vehicle*> route)->int
-	{
-		int size = route.size();
-		string type = NULL;
-		//直达
-		if (size == 1)
-		{
-			type = route[0]->getVehicleType();
-			if (type == HSRC_TYPE)
-			{
-				return MyTime::costTime(MyTime::stringToMyTime(route[0]->getHSRC().start_time, HH_MM), MyTime::stringToMyTime(route[0]->getHSRC().arrival_time, HH_MM));
-			}
-
-			if (type == AIRPLANE_TYPE)
-			{
-				return MyTime::costTime(MyTime::stringToMyTime(route[0]->getAP().start_time, HH_MM), MyTime::stringToMyTime(route[0]->getAP().arrival_time, HH_MM));
-			}
-		}
-		//中转
-		int res = 0;
-		for (int i = 0; i < size-1; i++)
-		{
-			type = route[i]->getVehicleType();
-			if (type == HSRC_TYPE)
-			{
-				res+=MyTime::costTime(MyTime::stringToMyTime(route[i]->getHSRC().start_time, HH_MM), MyTime::stringToMyTime(route[i]->getHSRC().arrival_time, HH_MM)) +
-					MyTime::costTime(MyTime::stringToMyTime(route[i]->getHSRC().arrival_time, HH_MM), MyTime::stringToMyTime(route[i + 1]->getHSRC().start_time, HH_MM)) +
-					MyTime::costTime(MyTime::stringToMyTime(route[i + 1]->getHSRC().start_time, HH_MM), MyTime::stringToMyTime(route[i + 1]->getHSRC().arrival_time, HH_MM));
-			}
-
-			if (type == AIRPLANE_TYPE)
-			{
-				res+=MyTime::costTime(MyTime::stringToMyTime(route[i]->getAP().start_time, HH_MM), MyTime::stringToMyTime(route[i]->getAP().arrival_time, HH_MM)) +
-					MyTime::costTime(MyTime::stringToMyTime(route[i]->getAP().arrival_time, HH_MM), MyTime::stringToMyTime(route[i + 1]->getAP().start_time, HH_MM)) +
-					MyTime::costTime(MyTime::stringToMyTime(route[i + 1]->getAP().start_time, HH_MM), MyTime::stringToMyTime(route[i + 1]->getAP().arrival_time, HH_MM));
-			}
-		}
-		return res;
-	};
-
-	auto getPriceOfVehicleOneRoute = [](vector<Vehicle*> route)->float
-	{
-		float res = 0;
-		string type = NULL;
-		for (int i = 0; i < route.size(); i++)
-		{
-			type = route[i]->getVehicleType();
-
-			if (type == HSRC_TYPE)
-			{
-				res += atof(route[i]->getHSRC().second_class_seat_price.c_str());
-			}
-
-			if (type == AIRPLANE_TYPE)
-			{
-				res += atof(route[i]->getAP().ticket_price.c_str());
-			}
-		}
-
-		return res;
 	};
 }
 /*
@@ -185,27 +191,47 @@ class GetRoute
 {
 private:
 	UserRequirementAfterPretreat requirement;
-	Graph<string> graph;
+	Graph<string, vector<vector<Vehicle*>>> graph;
 	vector<VertexData<string>> vertex_datas;
 	vector<pair<VertexData<string>, VertexData<string>>> edges;
-	vector<vector<Vehicle*>> weights;
+	vector<vector<vector<Vehicle*>>> weights;
 public:
 	GetRoute(UserRequirement requirement)
 	{
 		//TODO:后续封装dll时可以把UserRequirement requirement弄成一个全局变量
 		this->requirement = requirement.pretreatUserRequirement();
-		
+
+		int cities_num = this->requirement.start_cities.size();
+		vertex_datas = vector<string>(cities_num + 1);
+		edges = vector<pair<VertexData<string>, VertexData<string>>>(cities_num);
+		weights.resize(cities_num);
 	}
 
 	GetRoute(UserRequirementAfterPretreat requirement)
 	{
 		//TODO:后续封装dll时可以把UserRequirement requirement弄成一个全局变量
 		this->requirement = requirement;
+		int cities_num = requirement.start_cities.size();
+		vertex_datas = vector<string>(cities_num + 1);
+		edges = vector<pair<VertexData<string>, VertexData<string>>>(cities_num);
+		weights.resize(cities_num);
 	}
 	~GetRoute()
 	{
 
 	}
+
+	/*
+		创建图并且把边排序
+	* 
+	*/
+	GetRouteNameSpace::CreateGraphStatue createGraph();
+
+	/*
+		给weight排序
+	* 
+	*/
+	bool sortWeights();
 
 	/*
 		getVechileInfor 通过预处理后的需求获取交通工具(也就是获取路线)
@@ -228,22 +254,23 @@ public:
 	GetRouteNameSpace::GetTransitVehicleStatue getTransitVehicleInfor(int now_index, vector<string> sql_query);
 
 	/*
-		获取转车的后半段 并且把符合条件的写入weights
-	* 
-	*/
-	GetRouteNameSpace::GetTransitVehicleStatue getTransitVehicleInforSecondRoute(int now_index, string start_city_name, Vehicle* first_route);
-
-	/*
 		获取混合的交通工具信息
 	* sql_query:要执行的sql语句数组
 	*/
 	GetRouteNameSpace::GetFixVehicleStatue getFixVehicleInfor(int now_index, vector<string> sql_query);
 
 	/*
-		获取任意中转的交通工具信息
-	* sql_query:要执行的sql语句数组
+		获取转车的后半段 并且把符合条件的写入weights
+		FIX_TRANSIT和TRANSIT通用(获取sql时不同)
+	*
 	*/
-	GetRouteNameSpace::GetFixVehicleStatue getAllTransitVehicleInfor(int now_index, vector<string> sql_query);
+	GetRouteNameSpace::GetTransitVehicleStatue getTransitVehicleInforSecondRoute(int now_index, string start_city_name, Vehicle* first_route, vector<vector<Vehicle*>>& temp_weights);
+
+	/*
+		获取任意中转的交通工具信息
+	* 
+	*/
+	GetRouteNameSpace::GetAllTransitVehicleStatue getAllTransitVehicleInfor(int now_index);
 
 	/*
 		根据requirement里的条件合成where
@@ -259,6 +286,13 @@ public:
 	unordered_map<string, string> getWhereSentenceKeyValueOfSecondRouteOfTrans(int now_index,Vehicle* vehicle);
 
 	/*
+		根据vehicle里的条件合成where(用于转车的后半段) 并且符合条件的写入weights
+		适用于 all_transit+all_vehicle的时候
+	*
+	*/
+	unordered_map<string, string> getWhereSentenceKeyValueOfSecondRouteOfTrans(int now_index, Vehicle* vehicle,UserRequirementNamespace::VehicleTypeEnum vehicle_type);
+
+	/*
 		获取table_name(根据start_city)
 	* now_index:获得当前城市还有交通工具类型
 	*/
@@ -269,13 +303,19 @@ public:
 	* now_index:当前下标
 	* city_name:城市名
 	*/
-	string getTableName(int now_index,string city_name);
+	string getTableName(string city_name, UserRequirementNamespace::VehicleTypeEnum vehicle);
 
 	/*
 		通过requirement来获得合适的ORDER语句
 	* now_index:获得当前城市还有交通工具类型
 	*/
 	string getOrderSentence(int now_index);
+
+	/*
+		适用于all__transit且all_vehicle时获取order信息
+	* 
+	*/
+	string getOrderSentence(int now_index, UserRequirementNamespace::VehicleTypeEnum);
 
 	/**
 		根据条件合成SQL语句
@@ -296,10 +336,28 @@ public:
 	string getSQLQuerySecondRouteOfTrans(int now_index, vector<string> columns, string table_name, unordered_map<string, string> where_sentence);
 
 	/*
+		获得转车的第二段路线 适用于 all_transit+all_vehicle的时候
+	*
+	*/
+	string getSQLQuerySecondRouteOfTrans(int now_index, vector<string> columns, string table_name, unordered_map<string, string> where_sentence,UserRequirementNamespace::VehicleTypeEnum vehicle_type);
+
+	/*
 		获取SQL语句数据传入getXxxxVehicleInfor方法中
 	* now_index:当前下标
 	*/
 	vector<string> getSQLQueryVector(int now_index);
+
+	/*
+		返回weighs 因为all_transit要新建两个对象 从而也就是往对应的weights中写 我直接get写好的 然后拼一起就好了
+	* 
+	*/
+	vector<vector<vector<Vehicle*>>> getWeights();
+
+	/*
+		获取两个城市间的最大里程 从而确定转车的第一段的中转站 里程要比这个小
+	* 
+	*/
+	string getMaxMileage(string start_city,string arrival_city);
 };
 
 #endif // !GETROUTE_H

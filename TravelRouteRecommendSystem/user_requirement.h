@@ -6,6 +6,7 @@
 #include<string>
 using std::vector;
 using std::string;
+using std::exception;
 
 namespace UserRequirementNamespace
 {
@@ -104,6 +105,8 @@ namespace UserRequirementNamespace
 		PRETREAT_VEHICLE_EXPERIENCE_SUCCEED,
 		PRETREAT_transit_TYPE_FAILED_FINALL,
 		PRETREAT_transit_TYPE_SUCCEED_FINALL,
+		PRETREAT_DISTANCES_ERROR_FINALL,
+		PRETREAT_DISTANCES_SUCCEED_FINALL,
 	};
 	enum PretreatTimeStatus
 	{
@@ -150,7 +153,12 @@ namespace UserRequirementNamespace
 		PRETREAT_transit_TYPE_ERROR_TYPE,
 		PRETREAT_transit_TYPE_ERROR_FIX_ONLY_WHEN_VEHICLE_ALL,
 	};
-
+	enum PretreatDistancesStatus
+	{
+		PRETREAT_DISTANCES_ERROR,
+		PRETREAT_DISTANCES_SUCCEED,
+		PRETREAT_DISTANCES_EMPTY,
+	};
 };
 
 namespace
@@ -179,6 +187,7 @@ struct UserRequirementAfterPretreat
 	TicketType ticketType;
 	vector<VehicleType> vehicleType;
 	vector <TransitType> transitType;
+	vector<int> distances;
 };
 
 /*
@@ -312,5 +321,15 @@ protected:
 	处理预处理备注需求的函数
 	*/
 	PretreatStatue toDealPretreatRemarkNeeds(UserRequirementAfterPretreat& requirement);
+
+	/*
+	处理预处理距离的函数
+	*/
+	PretreatStatue pretreatDistances(UserRequirementAfterPretreat& requirement);
+
+	/*
+	处理预处理距离的函数
+	*/
+	PretreatStatue dealPretreatDistancesStatue(PretreatStatue statue_code);
 };
 #endif // !USERREQUIREMENT_H

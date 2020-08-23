@@ -32,14 +32,6 @@ public:
 		return this->vehicle_type;
 	}
 
-	virtual AirPlane getAP()
-	{
-		return AirPlane();
-	}
-	virtual HSRC getHSRC()
-	{
-		return HSRC();
-	}
 	virtual string get_vehicle_id()
 	{
 		return "";
@@ -128,14 +120,14 @@ public:
 		string start_time,
 		string start_airport,
 		string start_city,
+		string cost_time,
 		string arrival_time,
 		string arrival_airport,
 		string arrival_city,
 		string puntuality_rate,
 		string ticket_price,
 		string discount,
-		string other,
-		string cost_time
+		string other
 	) :Vehicle(AIRPLANE_TYPE)
 	{
 		this->plane_id = plane_id;
@@ -143,6 +135,7 @@ public:
 		this->start_time = start_time;
 		this->start_airport = start_airport;
 		this->start_city = start_city;
+		this->cost_time = cost_time;
 		this->arrival_time = arrival_time;
 		this->arrival_airport = arrival_airport;
 		this->arrival_city = arrival_city;
@@ -150,7 +143,6 @@ public:
 		this->ticket_price = ticket_price;
 		this->discount = discount;
 		this->other = other;
-		this->cost_time = cost_time;
 	};
 	~AirPlane()
 	{
@@ -170,24 +162,6 @@ public:
 	string other;
 	string cost_time;
 
-	AirPlane getAP()
-	{
-		AirPlane temp_ap;
-		temp_ap.plane_id = this->plane_id;
-		temp_ap.plane_type = this->plane_type;
-		temp_ap.start_time = this->start_time;
-		temp_ap.start_airport = this->start_airport;
-		temp_ap.start_city = this->start_city;
-		temp_ap.arrival_time = this->arrival_time;
-		temp_ap.arrival_airport = this->arrival_airport;
-		temp_ap.arrival_city = this->arrival_city;
-		temp_ap.puntuality_rate = this->puntuality_rate;
-		temp_ap.ticket_price = this->ticket_price;
-		temp_ap.discount = this->discount;
-		temp_ap.other = this->other;
-		temp_ap.cost_time = this->cost_time;
-		return temp_ap;
-	}
 	string get_vehicle_id();
 	string get_plane_type();
 	string get_start_time();
@@ -239,7 +213,7 @@ public:
 		this->arrival_station = arrival_station;
 		this->second_class_seat_price = second_class_seat_price;
 		this->one_class_seat_price = one_class_seat_price;
-		this->business_seat_price = one_class_seat_price;
+		this->business_seat_price = business_seat_price;
 		this->cost_time = cost_time;
 		this->mileage = mileage;
 	};
@@ -261,24 +235,6 @@ public:
 	string business_seat_price;
 	string mileage;
 
-	HSRC getHSRC()
-	{
-		HSRC temp_hsrc;
-		temp_hsrc.car_id = this->car_id;
-		temp_hsrc.start_type = this->start_type;
-		temp_hsrc.start_time = this->start_time;
-		temp_hsrc.start_station = this->start_station;
-		temp_hsrc.start_city = this->start_city;
-		temp_hsrc.cost_time = this->cost_time;
-		temp_hsrc.arrival_type = this->arrival_type;
-		temp_hsrc.arrival_time = this->arrival_time;
-		temp_hsrc.arrival_station = this->arrival_station;
-		temp_hsrc.arrival_city = this->arrival_city;
-		temp_hsrc.second_class_seat_price = this->second_class_seat_price;
-		temp_hsrc.one_class_seat_price = this->one_class_seat_price;
-		temp_hsrc.business_seat_price = this->business_seat_price;
-		return temp_hsrc;
-	}
 	string get_vehicle_id();
 	string get_start_type();
 	string get_start_time();

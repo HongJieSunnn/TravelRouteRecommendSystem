@@ -8,7 +8,7 @@ int MyTime::costTime(MyTime time)
 	tm start_tm_time=myTimeToTmTime(*this);
 	tm end_tm_time=myTimeToTmTime(time);
 	
-	double seconds = difftime(mktime(&start_tm_time), mktime(&end_tm_time));
+	double seconds = difftime(mktime(&end_tm_time), mktime(&start_tm_time));
 	return static_cast<int>(seconds / 60);//∑µªÿ∑÷÷”
 }
 
@@ -25,7 +25,7 @@ tm MyTime::myTimeToTmTime(MyTime time)
 
 int MyTime::costTime(MyTime start_time, MyTime end_time)
 {
-	return end_time.costTime(start_time);
+	return start_time.costTime(end_time);
 }
 
 MyTime MyTime::stringToMyTime(string time,int time_format)
@@ -47,11 +47,11 @@ MyTime MyTime::stringToMyTime(string time,int time_format)
 	case HH_MM:
 		if (conformTimeFormatOrNot(time, HH_MM))
 		{
-			temp_mytime.year =1900;
-			temp_mytime.month = 0;
+			temp_mytime.year =2020;
+			temp_mytime.month = 1;
 			temp_mytime.day = 1;
 			temp_mytime.hour = atoi(time.substr(0, 2).c_str());
-			temp_mytime.minute = atoi(time.substr(2, 2).c_str());
+			temp_mytime.minute = atoi(time.substr(3, 2).c_str());
 		}
 		break;
 	}

@@ -48,9 +48,7 @@ int main()
 
 	char* remark = (char*)"我要非常舒适的体验";
 
-	int* distances = new int[2];
-	distances[0] = 600;
-	distances[1] = 500;
+	int* distances = new int[2]{950,1050};
 
 	UserRequirement user_requirement
 	(
@@ -65,8 +63,10 @@ int main()
 		distances,
 		remark
 	);
+
 	GetRoute get_route(user_requirement);
-	get_route.getSQLQuery(1, vector<string>(), get_route.getTableName(1), get_route.getWhereSentenceKeyValue(1));
+	get_route.getVechileInfor();
+	get_route.createGraph();
 	cout << "ok";
 
 	delete[] start_cities;

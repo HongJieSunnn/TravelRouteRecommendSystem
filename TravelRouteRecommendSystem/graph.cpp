@@ -1,7 +1,7 @@
 #include "graph.h"
 
-template<class T>
-void Graph<T>::newNode(VertexData<T> node)
+template<class T, class WeightType>
+void Graph<T, WeightType>::newNode(VertexData<T> node)
 {
 	this->vertex_list.push_back(node);
 	this->vertex_list_map[node] = this->vertex_nums;
@@ -13,8 +13,8 @@ void Graph<T>::newNode(VertexData<T> node)
 	}
 }
 
-template<class T>
-void Graph<T>::delNode(VertexData<T> node)
+template<class T, class WeightType>
+void Graph<T, WeightType>::delNode(VertexData<T> node)
 {
 	NodeList adjNodes = vector<VertexIndex>;
 	VertexIndex node_index = this->vertex_list_map[node];
@@ -40,8 +40,8 @@ void Graph<T>::delNode(VertexData<T> node)
 	}
 }
 
-template<class T>
-void Graph<T>::addEdge(VertexData<T> start_node, VertexData<T> end_node, Weight<T> weight)
+template<class T, class WeightType>
+void Graph<T, WeightType>::addEdge(VertexData<T> start_node, VertexData<T> end_node, Weight<WeightType> weight)
 {
 	if (!isNode(start_node) || !isNode(end_node))
 	{
@@ -60,8 +60,8 @@ void Graph<T>::addEdge(VertexData<T> start_node, VertexData<T> end_node, Weight<
 	this->matrix_edge_table[start_index][end_index] = weight;
 }
 
-template<class T>
-void Graph<T>::delEdge(VertexData<T> start_node, VertexData<T> end_node)
+template<class T, class WeightType>
+void Graph<T, WeightType>::delEdge(VertexData<T> start_node, VertexData<T> end_node)
 {
 	if (!isNode(start_node) || !isNode(end_node))
 	{
@@ -82,8 +82,8 @@ void Graph<T>::delEdge(VertexData<T> start_node, VertexData<T> end_node)
 	this->edge_nums--;
 }
 
-template<class T>
-OperateGraphStatue Graph<T>::createGraph(vector<VertexData<T>> vertex_datas, vector<pair<VertexData<T>, VertexData<T>>> edges, Weight<T> weights)
+template<class T, class WeightType>
+OperateGraphStatue Graph<T, WeightType>::createGraph(vector<VertexData<T>> vertex_datas, vector<pair<VertexData<T>, VertexData<T>>> edges, vector<Weight<WeightType>> weights)
 {
 	if (this->vertex_nums == 0)
 	{
@@ -105,7 +105,7 @@ OperateGraphStatue Graph<T>::createGraph(vector<VertexData<T>> vertex_datas, vec
 
 	for (int i = 0; i < edge_nums; i++)
 	{
-		if (weights != nullptr)
+		if (!weights.empty())
 			this->addEdge(edges[i].first, edges[i].second, weights[i]);
 		else
 		{
@@ -116,3 +116,4 @@ OperateGraphStatue Graph<T>::createGraph(vector<VertexData<T>> vertex_datas, vec
 
 	return CREATE_GRAPH_SUCCEED;
 }
+

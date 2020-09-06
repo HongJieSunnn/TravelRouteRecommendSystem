@@ -3,6 +3,7 @@
 #include<unordered_map>
 #include<queue>
 #include<algorithm>
+#include<thread>
 #include"user_requirement.h"
 #include"init_mysql.h"
 #include"graph.h"
@@ -12,6 +13,7 @@
 //TODO 不知道要把它写成父类 然后直达 转车什么的继承 还是直接写一个通用方法 支持各种方式
 using std::unordered_map;
 using std::priority_queue;
+using std::thread;
 using std::make_heap;
 using std::pop_heap;
 using std::push_heap;
@@ -96,7 +98,7 @@ namespace GetRouteNameSpace
 	auto getTimeOfVehicleOneRoute = [](vector<Vehicle*> route)->int
 	{
 		int size = route.size();
-		string type = NULL;
+		string type;
 		//直达
 		if (size == 1)
 		{
@@ -262,9 +264,9 @@ public:
 	/*
 		获取转车的后半段 并且把符合条件的写入weights
 		FIX_TRANSIT和TRANSIT通用(获取sql时不同)
-	*
+	* first_route:第一段路相同arrival_station的集合
 	*/
-	GetRouteNameSpace::GetTransitVehicleStatue getTransitVehicleInforSecondRoute(int now_index, string start_city_name, Vehicle* first_route, vector<vector<Vehicle*>>& temp_weights);
+	GetRouteNameSpace::GetTransitVehicleStatue getTransitVehicleInforSecondRoute(int now_index, vector<Vehicle*> first_route, vector<vector<Vehicle*>>& temp_weights);
 
 	/*
 		获取任意中转的交通工具信息

@@ -170,24 +170,24 @@ GetRouteNameSpace::GetTransitVehicleStatue GetRoute::getTransitVehicleInfor(int 
 
 		MYSQL_ROW row = NULL;
 		row = mysql_fetch_row(res);
-		//每次读取完一行的前半段 直接读取所有后半段 并且把符合条件的都放到weighs中
+		//哈希表 键是第二段路开始的站点 也就是第一段路的arrival_station 用这个来分类 直接查询时间最早的那个 然后再来分配给对应的第一段路 并且可以开多线程 直接对所有站点同时读
+		unordered_map<string, vector<Vehicle*>> first_route_divide_by_station;
+		//最终结果 也就是多个两段路的集合
 		vector<vector<Vehicle*>> temp_weights;
 		while (row != NULL)
 		{
-			Vehicle* first_route=new Vehicle();//第一段路
-			string start_city_name;
 			//前半段
 			switch (this->requirement.vehicleType[now_index])
 			{
 			case UserRequirementNamespace::AIRPLANE:
-				first_route = (new AirPlane
+				first_route_divide_by_station[row[7]].emplace_back(new AirPlane
 				(
 					row[0], row[1], row[2], row[3], row[4], row[5],
 					row[6], row[7], row[8], row[9], row[10], row[11], row[12]
 				));
 				break;
 			case UserRequirementNamespace::HSRC:
-				first_route = (new HSRC
+				first_route_divide_by_station[row[8]].emplace_back(new HSRC
 				(
 					row[0], row[1], row[2], row[3], row[4], row[5],
 					row[6], row[7], row[8], row[9], row[10], row[11],
@@ -197,43 +197,82 @@ GetRouteNameSpace::GetTransitVehicleStatue GetRoute::getTransitVehicleInfor(int 
 			case UserRequirementNamespace::ALL_VEHICLE:
 				if (sql_query[i].find("火车") != string::npos)
 				{
-					first_route = new HSRC
+					first_route_divide_by_station[row[8]].emplace_back(new HSRC
 					(
 						row[0], row[1], row[2], row[3], row[4], row[5],
 						row[6], row[7], row[8], row[9], row[10], row[11],
 						row[12], row[13]
-					);
+					));
 				}
 				else
 				{
-					first_route = new AirPlane
+					first_route_divide_by_station[row[7]].emplace_back(new AirPlane
 					(
 						row[0], row[1], row[2], row[3], row[4], row[5],
 						row[6], row[7], row[8], row[9], row[10], row[11], row[12]
-					);
+					));
 					break;
 				}
 				break;
 			}
-			start_city_name = first_route->get_arrival_city();
-			auto second_route_statue = getTransitVehicleInforSecondRoute(now_index, start_city_name, first_route, temp_weights);
-			if (second_route_statue != GetTransitVehicleStatue::GET_ONE_SECOND_ROUTE_INFOR_SUCCEED)
+			row = mysql_fetch_row(res);
+		}
+		int size = first_route_divide_by_station.size();
+		int async_times = size / 5;//5线程个同时进行的次数
+		int sync_times = size % 5;//一个线程一个线程执行 其实就相当于同步执行了
+		auto routes_one_station = first_route_divide_by_station.begin();
+		for (int j=0;j<async_times;j++)
+		{
+			thread thread_1(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station->second, temp_weights);
+			thread thread_2(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, temp_weights);
+			thread thread_3(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, temp_weights);
+			thread thread_4(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, temp_weights);
+			thread thread_5(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, temp_weights);
+
+			thread_1.join();
+			thread_2.join();
+			thread_3.join();
+			thread_4.join();
+			thread_5.join();
+		}
+		switch (sync_times)
+		{
+		case 1:
 			{
-				if (second_route_statue == GetTransitVehicleStatue::SELECT_RESULT_NO_SECOND_ROUTE|| second_route_statue == GetTransitVehicleStatue::SELECT_RESULT_NO_TABLE_EXIST)
-				{
-					row = mysql_fetch_row(res);
-					delete first_route;
-					continue;
-				}
-				return GetTransitVehicleStatue::GET_TRANSIT_VEHICLE__GET_FAILED_SECOND_ROUTE_ERROR;
-			}
-			if (temp_weights.size() >= 20)
-			{
-				delete first_route;
+				thread thread_1(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station->second, temp_weights);
+				thread_1.join();
 				break;
 			}
-			row = mysql_fetch_row(res);
-			delete first_route;
+		case 2:
+			{
+				thread thread_1(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station->second, temp_weights);
+				thread thread_2(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, temp_weights);
+				thread_1.join();
+				thread_2.join();
+				break;
+			}
+		case 3:
+			{
+				thread thread_1(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station->second, temp_weights);
+				thread thread_2(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, temp_weights);
+				thread thread_3(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, temp_weights);
+				thread_1.join();
+				thread_2.join();
+				thread_3.join();
+				break;
+			}
+		case 4:
+			{
+				thread thread_1(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station->second, temp_weights);
+				thread thread_2(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, temp_weights);
+				thread thread_3(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, temp_weights);
+				thread thread_4(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, temp_weights);
+				thread_1.join();
+				thread_2.join();
+				thread_3.join();
+				thread_4.join();
+				break;
+			}
 		}
 		weights[now_index] = temp_weights;
 	}
@@ -251,24 +290,24 @@ GetRouteNameSpace::GetFixVehicleStatue GetRoute::getFixVehicleInfor(int now_inde
 
 		MYSQL_ROW row = NULL;
 		row = mysql_fetch_row(res);
-		//每次读取完一行的前半段 直接读取所有后半段 并且把符合条件的都放到weighs中
+		//哈希表 键是第二段路开始的站点 也就是第一段路的arrival_station 用这个来分类 直接查询时间最早的那个 然后再来分配给对应的第一段路 并且可以开多线程 直接对所有站点同时读
+		unordered_map<string, vector<Vehicle*>> first_route_divide_by_station;
+		//最终结果 也就是多个两段路的集合
 		vector<vector<Vehicle*>> temp_weights;
 		while (row != NULL)
 		{
-			Vehicle* first_route = new Vehicle();//第一段路
-			string start_city_name;
 			//前半段
 			switch (this->requirement.vehicleType[now_index])
 			{
 			case UserRequirementNamespace::AIRPLANE:
-				first_route = (new AirPlane
+				first_route_divide_by_station[row[7]].emplace_back(new AirPlane
 				(
 					row[0], row[1], row[2], row[3], row[4], row[5],
 					row[6], row[7], row[8], row[9], row[10], row[11], row[12]
 				));
 				break;
 			case UserRequirementNamespace::HSRC:
-				first_route = (new HSRC
+				first_route_divide_by_station[row[8]].emplace_back(new HSRC
 				(
 					row[0], row[1], row[2], row[3], row[4], row[5],
 					row[6], row[7], row[8], row[9], row[10], row[11],
@@ -278,58 +317,109 @@ GetRouteNameSpace::GetFixVehicleStatue GetRoute::getFixVehicleInfor(int now_inde
 			case UserRequirementNamespace::ALL_VEHICLE:
 				if (sql_query[i].find("火车") != string::npos)
 				{
-					first_route = new HSRC
+					first_route_divide_by_station[row[8]].emplace_back(new HSRC
 					(
 						row[0], row[1], row[2], row[3], row[4], row[5],
 						row[6], row[7], row[8], row[9], row[10], row[11],
 						row[12], row[13]
-					);
+					));
 				}
 				else
 				{
-					first_route = new AirPlane
+					first_route_divide_by_station[row[7]].emplace_back(new AirPlane
 					(
 						row[0], row[1], row[2], row[3], row[4], row[5],
 						row[6], row[7], row[8], row[9], row[10], row[11], row[12]
-					);
+					));
 					break;
 				}
 				break;
 			}
-			start_city_name = first_route->get_arrival_city();
-			auto second_route_statue = getTransitVehicleInforSecondRoute(now_index, start_city_name, first_route, temp_weights);
-			if (second_route_statue != GetTransitVehicleStatue::GET_ONE_SECOND_ROUTE_INFOR_SUCCEED)
-			{
-				if (second_route_statue == GetTransitVehicleStatue::SELECT_RESULT_NO_SECOND_ROUTE || second_route_statue == GetTransitVehicleStatue::SELECT_RESULT_NO_TABLE_EXIST)
-				{
-					row = mysql_fetch_row(res);
-					delete first_route;
-					continue;
-				}
-				return GetFixVehicleStatue::GET_TRANSIT_VEHICLE__GET_FAILED_SECOND_ROUTE_ERROR;
-			}
-			if (temp_weights.size() >= 20)
-			{
-				delete first_route;
-				break;
-			}
 			row = mysql_fetch_row(res);
-			delete first_route;
+		}
+		int size = first_route_divide_by_station.size();
+		int async_times = size / 5;//5线程个同时进行的次数
+		int sync_times = size % 5;//一个线程一个线程执行 其实就相当于同步执行了
+		auto routes_one_station = first_route_divide_by_station.begin();
+		for (int j = 0; j < async_times; j++)
+		{
+			thread thread_1(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station->second, temp_weights);
+			thread thread_2(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, temp_weights);
+			thread thread_3(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, temp_weights);
+			thread thread_4(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, temp_weights);
+			thread thread_5(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, temp_weights);
+
+			thread_1.join();
+			thread_2.join();
+			thread_3.join();
+			thread_4.join();
+			thread_5.join();
+		}
+		switch (sync_times)
+		{
+		case 1:
+		{
+			thread thread_1(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station->second, temp_weights);
+			thread_1.join();
+			break;
+		}
+		case 2:
+		{
+			thread thread_1(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station->second, temp_weights);
+			thread thread_2(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, temp_weights);
+			thread_1.join();
+			thread_2.join();
+			break;
+		}
+		case 3:
+		{
+			thread thread_1(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station->second, temp_weights);
+			thread thread_2(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, temp_weights);
+			thread thread_3(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, temp_weights);
+			thread_1.join();
+			thread_2.join();
+			thread_3.join();
+			break;
+		}
+		case 4:
+		{
+			thread thread_1(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station->second, temp_weights);
+			thread thread_2(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, temp_weights);
+			thread thread_3(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, temp_weights);
+			thread thread_4(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, temp_weights);
+			thread_1.join();
+			thread_2.join();
+			thread_3.join();
+			thread_4.join();
+			break;
+		}
 		}
 		weights[now_index] = temp_weights;
 	}
 	return GetFixVehicleStatue::GET_FIX_VEHICLE_SUCCEED;
 }
 
-GetRouteNameSpace::GetTransitVehicleStatue GetRoute::getTransitVehicleInforSecondRoute(int now_index, string start_city_name, Vehicle* first_route, vector<vector<Vehicle*>>& temp_weights)
+GetRouteNameSpace::GetTransitVehicleStatue GetRoute::getTransitVehicleInforSecondRoute(int now_index, vector<Vehicle*> first_route, vector<vector<Vehicle*>>& temp_weights)
 {
-	UserRequirementNamespace::VehicleTypeEnum vehicle_type = first_route->getVehicleType() == HSRC_TYPE ? UserRequirementNamespace::HSRC : UserRequirementNamespace::AIRPLANE;
+	sort(first_route.begin(), first_route.end(), 
+		[](Vehicle* vehicle1,Vehicle* vehicle2)->bool
+		{
+			if (vehicle1->get_arrival_time() < vehicle2->get_arrival_time())
+			{
+				return true;
+			}
+			return false;
+		});//按照arrival_time(即第二段的start_time)来排序 然后对最小的那个进行数据库查询就好了
+
+	//因为同一个first_route集合到达站一定一样 即便是all_vehicle first_route也不会出现飞机和火车一起出现 因为站点名不一样的
+	UserRequirementNamespace::VehicleTypeEnum vehicle_type = first_route[0]->getVehicleType() == HSRC_TYPE ? UserRequirementNamespace::HSRC : UserRequirementNamespace::AIRPLANE;
+	string start_city_name = first_route[0]->get_arrival_city();
 
 	string sql = getSQLQuerySecondRouteOfTrans(
 		now_index,
 		vector<string>(),
 		getTableName(start_city_name, vehicle_type),
-		getWhereSentenceKeyValueOfSecondRouteOfTrans(now_index, first_route, vehicle_type),
+		getWhereSentenceKeyValueOfSecondRouteOfTrans(now_index, first_route[0], vehicle_type),
 		vehicle_type
 	);
 	//后半段
@@ -343,48 +433,43 @@ GetRouteNameSpace::GetTransitVehicleStatue GetRoute::getTransitVehicleInforSecon
 		return GetTransitVehicleStatue::SELECT_RESULT_NO_SECOND_ROUTE;
 	MYSQL_ROW row_second = NULL;
 	row_second = mysql_fetch_row(res_second);
-	
+	vector<Vehicle*> second_route;
 	while (row_second != NULL)
 	{
-		vector<Vehicle*> route(2);
-		route[0] = first_route;
 		switch (vehicle_type)
 		{
 		case UserRequirementNamespace::AIRPLANE:
-			route[1] = (new AirPlane
+			second_route.emplace_back(new AirPlane
 			(
 				row_second[0], row_second[1], row_second[2], row_second[3], row_second[4], row_second[5],
 				row_second[6], row_second[7], row_second[8], row_second[9], row_second[10], row_second[11], row_second[12]
 			));
-			if (MyTime::costTime(MyTime::stringToMyTime(route[0]->get_arrival_time(), HH_MM), MyTime::stringToMyTime(route[1]->get_start_time(), HH_MM)) < 25)//如果等待时间小于25分钟
-			{
-				row_second = mysql_fetch_row(res_second);
-				continue;
-			}
-			else
-			{
-				temp_weights.push_back(route);
-			}
 			break;
 		case UserRequirementNamespace::HSRC:
-			route[1] = (new HSRC
+			second_route.emplace_back(new HSRC
 			(
 				row_second[0], row_second[1], row_second[2], row_second[3], row_second[4], row_second[5],
 				row_second[6], row_second[7], row_second[8], row_second[9], row_second[10], row_second[11],
 				row_second[12], row_second[13]
 			));
-			if (MyTime::costTime(MyTime::stringToMyTime(route[0]->get_arrival_time(), HH_MM), MyTime::stringToMyTime(route[1]->get_start_time(), HH_MM)) < 15)//如果等待时间小于15分钟
-			{
-				row_second = mysql_fetch_row(res_second);
-				continue;
-			}
-			else
-			{
-				temp_weights.push_back(route);
-			}
 			break;
 		}
 		row_second = mysql_fetch_row(res_second);
+	}
+	//写在上面或者新的二重循环复杂度都是n^2 但是写外面好一些感觉 不用考虑自己内存释放的问题（除非使用智能指针 但是那样又有点麻烦）
+
+	for (auto one_of_second_route : second_route)
+	{
+		for (auto one_of_first_route : first_route)
+		{
+			if (one_of_first_route->get_arrival_time() < one_of_second_route->get_start_time())//第二段出发时间晚于第一段到达时间
+			{
+				if (MyTime::costTime(MyTime::stringToMyTime(one_of_first_route->get_arrival_time(), HH_MM), MyTime::stringToMyTime(one_of_second_route->get_start_time(), HH_MM)) < 20)//时间间隔差20分钟往上
+				{
+					temp_weights.emplace_back(vector<Vehicle>{one_of_first_route, one_of_second_route});
+				}
+			}
+		}
 	}
 	return GetTransitVehicleStatue::GET_ONE_SECOND_ROUTE_INFOR_SUCCEED;
 }
@@ -437,7 +522,13 @@ unordered_map<string, string> GetRoute::getWhereSentenceKeyValue(int now_index)
 	}
 	if (requirement.transitType[now_index] == UserRequirementNamespace::TRANS)
 	{
-		where_sentence.insert({ "mileage",to_string(requirement.distances[now_index]) });
+		where_sentence.insert({ "mileage",to_string(requirement.distances[now_index]*0.65) });//火车
+
+		int minute_of_all = requirement.distances[now_index] / 800.0*60.0*0.65;
+		int hour = minute_of_all / 60;
+		int minute = minute_of_all % 60;
+		string cost_time=to_string(hour).append("小时").append(to_string(minute)).append("分钟");
+		where_sentence.insert({ "cost_time",cost_time });
 	}
 	return where_sentence;
 }
@@ -461,6 +552,13 @@ unordered_map<string, string> GetRoute::getWhereSentenceKeyValueOfSecondRouteOfT
 		}
 		where_sentence.insert({ "arrival_time",requirement.arrive_time.myTimeToStringByInt(HH_MM) });
 	}
+	where_sentence.insert({ "mileage",to_string(requirement.distances[now_index] * 0.60) });//火车
+
+	int minute_of_all = requirement.distances[now_index] / 800.0 * 60.0 * 0.65;
+	int hour = minute_of_all / 60;
+	int minute = minute_of_all % 60;
+	string cost_time = to_string(hour).append("小时").append(to_string(minute)).append("分钟");
+	where_sentence.insert({ "cost_time",cost_time });
 	return where_sentence;
 }
 
@@ -483,6 +581,13 @@ unordered_map<string, string> GetRoute::getWhereSentenceKeyValueOfSecondRouteOfT
 		}
 		where_sentence.insert({ "arrival_time",requirement.arrive_time.myTimeToStringByInt(HH_MM) });
 	}
+	where_sentence.insert({ "mileage",to_string(requirement.distances[now_index] * 0.65) });//火车
+
+	int minute_of_all = requirement.distances[now_index] / 800.0 * 60.0 * 0.65;
+	int hour = minute_of_all / 60;
+	int minute = minute_of_all % 60;
+	string cost_time = to_string(hour).append("小时").append(to_string(minute)).append("分钟");
+	where_sentence.insert({ "cost_time",cost_time });
 	return where_sentence;
 }
 
@@ -636,7 +741,6 @@ string GetRoute::getOrderSentence(int now_index)
 		}
 		break;
 	}
-
 	return sql_query;
 }
 
@@ -760,12 +864,13 @@ string GetRoute::getOrderSentence(int now_index, UserRequirementNamespace::Vehic
 		break;
 	}
 
+
 	return sql_query;
 }
 
 string GetRoute::getSQLQuery(int now_index,vector<string> columns, string table_name, unordered_map<string, string> where_sentence)
 {
-	string sql_query = "SELECT ";
+	string sql_query = "SELECT DISTINCT ";
 
 	if (columns.size())
 	{
@@ -823,6 +928,14 @@ string GetRoute::getSQLQuery(int now_index,vector<string> columns, string table_
 		sql_query.append(InitMySQL::toSQLString(where_sentence["mileage"]));
 	}
 
+	if (where_sentence.find("cost_time") != where_sentence.end() && table_name.find("航班") != string::npos)
+	{
+		sql_query.append(" AND ");
+
+		sql_query.append("cost_time<");
+		sql_query.append(InitMySQL::toSQLString(where_sentence["cost_time"]));
+	}
+
 	sql_query.append(getOrderSentence(now_index));
 
 	return sql_query;
@@ -830,7 +943,7 @@ string GetRoute::getSQLQuery(int now_index,vector<string> columns, string table_
 
 string GetRoute::getSQLQuerySecondRouteOfTrans(int now_index, vector<string> columns, string table_name, unordered_map<string, string> where_sentence)
 {
-	string sql_query = "SELECT ";
+	string sql_query = "SELECT DISTINCT ";
 
 	if (columns.size())
 	{
@@ -893,6 +1006,22 @@ string GetRoute::getSQLQuerySecondRouteOfTrans(int now_index, vector<string> col
 		sql_query.append("arrival_time<=");
 		sql_query.append(InitMySQL::toSQLString(where_sentence["arrival_time"]));
 	}
+	if (where_sentence.find("mileage") != where_sentence.end() && requirement.vehicleType[now_index]==UserRequirementNamespace::HSRC)
+	{
+		sql_query.append(" AND ");
+
+		sql_query.append("mileage<");
+		sql_query.append(InitMySQL::toSQLString(where_sentence["mileage"]));
+	}
+
+	if (where_sentence.find("cost_time") != where_sentence.end() && requirement.vehicleType[now_index] == UserRequirementNamespace::AIRPLANE)
+	{
+		sql_query.append(" AND ");
+
+		sql_query.append("cost_time<");
+		sql_query.append(InitMySQL::toSQLString(where_sentence["cost_time"]));
+	}
+
 	if(this->requirement.vehicleType[now_index]==UserRequirementNamespace::ALL_VEHICLE)
 	{
 		if (table_name.find("火车") != string::npos)
@@ -914,7 +1043,7 @@ string GetRoute::getSQLQuerySecondRouteOfTrans(int now_index, vector<string> col
 
 string GetRoute::getSQLQuerySecondRouteOfTrans(int now_index, vector<string> columns, string table_name, unordered_map<string, string> where_sentence, UserRequirementNamespace::VehicleTypeEnum vehicle_type)
 {
-	string sql_query = "SELECT ";
+	string sql_query = "SELECT DISTINCT ";
 
 	if (columns.size())
 	{
@@ -963,6 +1092,21 @@ string GetRoute::getSQLQuerySecondRouteOfTrans(int now_index, vector<string> col
 
 		sql_query.append("arrival_time<=");
 		sql_query.append(InitMySQL::toSQLString(where_sentence["arrival_time"]));
+	}
+	if (where_sentence.find("mileage") != where_sentence.end() && vehicle_type==UserRequirementNamespace::HSRC)
+	{
+		sql_query.append(" AND ");
+
+		sql_query.append("mileage<");
+		sql_query.append(InitMySQL::toSQLString(where_sentence["mileage"]));
+	}
+
+	if (where_sentence.find("cost_time") != where_sentence.end() && vehicle_type==UserRequirementNamespace::AIRPLANE)
+	{
+		sql_query.append(" AND ");
+
+		sql_query.append("cost_time<");
+		sql_query.append(InitMySQL::toSQLString(where_sentence["cost_time"]));
 	}
 	sql_query.append(getOrderSentence(now_index, vehicle_type));
 

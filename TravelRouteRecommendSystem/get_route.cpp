@@ -97,6 +97,10 @@ GetRouteNameSpace::GetDirectVehicleStatue GetRoute::getDirectVehicleInfor(int no
 	for (int i = 0; i < sql_query.size(); i++)
 	{
 		MYSQL_RES* res = InitMySQL::execSQLToGetResult(sql_query[i]);
+		if (res == nullptr)
+		{
+			return GetDirectVehicleStatue::GET_RES_FAILED;
+		}
 		int rows_count = res->row_count;
 		if (rows_count == 0)
 			return GetDirectVehicleStatue::SELECT_RESULT_EMPTY;
@@ -164,6 +168,10 @@ GetRouteNameSpace::GetTransitVehicleStatue GetRoute::getTransitVehicleInfor(int 
 	for (int i = 0; i < sql_query.size(); i++)
 	{
 		MYSQL_RES* res = InitMySQL::execSQLToGetResult(sql_query[i]);
+		if (res == nullptr)
+		{
+			return GetTransitVehicleStatue::GET_RES_FAILED;
+		}
 		int rows_count = res->row_count;
 		if (rows_count == 0)
 			return GetTransitVehicleStatue::SELECT_RESULT_NO_FIRST_ROUTE;
@@ -221,55 +229,57 @@ GetRouteNameSpace::GetTransitVehicleStatue GetRoute::getTransitVehicleInfor(int 
 		int async_times = size / 5;//5线程个同时进行的次数
 		int sync_times = size % 5;//一个线程一个线程执行 其实就相当于同步执行了
 		auto routes_one_station = first_route_divide_by_station.begin();
+		getTransitVehicleInforSecondRoute(now_index, routes_one_station->second, temp_weights);
 		for (int j=0;j<async_times;j++)
 		{
-			thread thread_1(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station->second, temp_weights);
-			thread thread_2(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, temp_weights);
-			thread thread_3(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, temp_weights);
-			thread thread_4(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, temp_weights);
-			thread thread_5(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, temp_weights);
+			thread thread_1(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station->second, ref(temp_weights));
+			thread thread_2(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, ref(temp_weights));
+			thread thread_3(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, ref(temp_weights));
+			thread thread_4(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, ref(temp_weights));
+			thread thread_5(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, ref(temp_weights));
 
-			thread_1.join();
-			thread_2.join();
-			thread_3.join();
-			thread_4.join();
+			thread_1.detach();
+			thread_2.detach();
+			thread_3.detach();
+			thread_4.detach();
 			thread_5.join();
+			routes_one_station++;
 		}
 		switch (sync_times)
 		{
 		case 1:
 			{
-				thread thread_1(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station->second, temp_weights);
+				thread thread_1(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station->second, ref(temp_weights));
 				thread_1.join();
 				break;
 			}
 		case 2:
 			{
-				thread thread_1(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station->second, temp_weights);
-				thread thread_2(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, temp_weights);
-				thread_1.join();
+				thread thread_1(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station->second, ref(temp_weights));
+				thread thread_2(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, ref(temp_weights));
+				thread_1.detach();
 				thread_2.join();
 				break;
 			}
 		case 3:
 			{
-				thread thread_1(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station->second, temp_weights);
-				thread thread_2(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, temp_weights);
-				thread thread_3(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, temp_weights);
-				thread_1.join();
-				thread_2.join();
+				thread thread_1(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station->second, ref(temp_weights));
+				thread thread_2(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, ref(temp_weights));
+				thread thread_3(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, ref(temp_weights));
+				thread_1.detach();
+				thread_2.detach();
 				thread_3.join();
 				break;
 			}
 		case 4:
 			{
-				thread thread_1(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station->second, temp_weights);
-				thread thread_2(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, temp_weights);
-				thread thread_3(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, temp_weights);
-				thread thread_4(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, temp_weights);
-				thread_1.join();
-				thread_2.join();
-				thread_3.join();
+				thread thread_1(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station->second, ref(temp_weights));
+				thread thread_2(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, ref(temp_weights));
+				thread thread_3(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, ref(temp_weights));
+				thread thread_4(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, ref(temp_weights));
+				thread_1.detach();
+				thread_2.detach();
+				thread_3.detach();
 				thread_4.join();
 				break;
 			}
@@ -284,6 +294,10 @@ GetRouteNameSpace::GetFixVehicleStatue GetRoute::getFixVehicleInfor(int now_inde
 	for (int i = 0; i < sql_query.size(); i++)
 	{
 		MYSQL_RES* res = InitMySQL::execSQLToGetResult(sql_query[i]);
+		if (res == nullptr)
+		{
+			GetFixVehicleStatue::GET_RES_FAILED;
+		}
 		int rows_count = res->row_count;
 		if (rows_count == 0)
 			return GetFixVehicleStatue::SELECT_RESULT_NO_FIRST_ROUTE;
@@ -343,11 +357,11 @@ GetRouteNameSpace::GetFixVehicleStatue GetRoute::getFixVehicleInfor(int now_inde
 		auto routes_one_station = first_route_divide_by_station.begin();
 		for (int j = 0; j < async_times; j++)
 		{
-			thread thread_1(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station->second, temp_weights);
-			thread thread_2(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, temp_weights);
-			thread thread_3(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, temp_weights);
-			thread thread_4(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, temp_weights);
-			thread thread_5(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, temp_weights);
+			thread thread_1(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station->second, ref(temp_weights));
+			thread thread_2(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, ref(temp_weights));
+			thread thread_3(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, ref(temp_weights));
+			thread thread_4(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, ref(temp_weights));
+			thread thread_5(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, ref(temp_weights));
 
 			thread_1.join();
 			thread_2.join();
@@ -359,23 +373,23 @@ GetRouteNameSpace::GetFixVehicleStatue GetRoute::getFixVehicleInfor(int now_inde
 		{
 		case 1:
 		{
-			thread thread_1(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station->second, temp_weights);
+			thread thread_1(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station->second, ref(temp_weights));
 			thread_1.join();
 			break;
 		}
 		case 2:
 		{
-			thread thread_1(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station->second, temp_weights);
-			thread thread_2(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, temp_weights);
+			thread thread_1(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station->second, ref(temp_weights));
+			thread thread_2(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, ref(temp_weights));
 			thread_1.join();
 			thread_2.join();
 			break;
 		}
 		case 3:
 		{
-			thread thread_1(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station->second, temp_weights);
-			thread thread_2(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, temp_weights);
-			thread thread_3(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, temp_weights);
+			thread thread_1(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station->second, ref(temp_weights));
+			thread thread_2(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, ref(temp_weights));
+			thread thread_3(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, ref(temp_weights));
 			thread_1.join();
 			thread_2.join();
 			thread_3.join();
@@ -383,10 +397,10 @@ GetRouteNameSpace::GetFixVehicleStatue GetRoute::getFixVehicleInfor(int now_inde
 		}
 		case 4:
 		{
-			thread thread_1(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station->second, temp_weights);
-			thread thread_2(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, temp_weights);
-			thread thread_3(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, temp_weights);
-			thread thread_4(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, temp_weights);
+			thread thread_1(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station->second, ref(temp_weights));
+			thread thread_2(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, ref(temp_weights));
+			thread thread_3(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, ref(temp_weights));
+			thread thread_4(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, ref(temp_weights));
 			thread_1.join();
 			thread_2.join();
 			thread_3.join();
@@ -422,8 +436,10 @@ GetRouteNameSpace::GetTransitVehicleStatue GetRoute::getTransitVehicleInforSecon
 		getWhereSentenceKeyValueOfSecondRouteOfTrans(now_index, first_route[0], vehicle_type),
 		vehicle_type
 	);
+	InitMySQL temp;
+	MYSQL db = temp.getMySQL("cdb-j6k4d9vs.bj.tencentcdb.com", "user", "asdf3485", "tourism-recommend-sys-trafficimfor", 10255, "gbk");
 	//后半段
-	MYSQL_RES* res_second = InitMySQL::execSQLToGetResult(sql);//查询数据库
+	MYSQL_RES* res_second = InitMySQL::execSQLToGetResult(db,sql);//查询数据库
 	if (res_second == nullptr)
 	{
 		return GetTransitVehicleStatue::SELECT_RESULT_NO_TABLE_EXIST;
@@ -466,7 +482,7 @@ GetRouteNameSpace::GetTransitVehicleStatue GetRoute::getTransitVehicleInforSecon
 			{
 				if (MyTime::costTime(MyTime::stringToMyTime(one_of_first_route->get_arrival_time(), HH_MM), MyTime::stringToMyTime(one_of_second_route->get_start_time(), HH_MM)) < 20)//时间间隔差20分钟往上
 				{
-					temp_weights.emplace_back(vector<Vehicle>{one_of_first_route, one_of_second_route});
+					temp_weights.emplace_back(vector<Vehicle*>{one_of_first_route, one_of_second_route});
 				}
 			}
 		}

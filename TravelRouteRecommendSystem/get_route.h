@@ -14,6 +14,7 @@
 using std::unordered_map;
 using std::priority_queue;
 using std::thread;
+using std::ref;
 using std::make_heap;
 using std::pop_heap;
 using std::push_heap;
@@ -57,7 +58,8 @@ namespace GetRouteNameSpace
 	{
 		GET_DIRECT_VEHICLE_FAILED,
 		GET_DIRECT_VEHICLE_SUCCEED,
-		SELECT_RESULT_EMPTY
+		SELECT_RESULT_EMPTY,
+		GET_RES_FAILED
 	};
 	/*
 		获取中转交通工具的状态枚举
@@ -70,7 +72,8 @@ namespace GetRouteNameSpace
 		SELECT_RESULT_NO_SECOND_ROUTE,
 		GET_ONE_SECOND_ROUTE_INFOR_SUCCEED,
 		GET_TRANSIT_VEHICLE__GET_FAILED_SECOND_ROUTE_ERROR,
-		SELECT_RESULT_NO_TABLE_EXIST
+		SELECT_RESULT_NO_TABLE_EXIST,
+		GET_RES_FAILED
 	};
 	/*
 		获取混合交通工具的状态枚举
@@ -82,7 +85,8 @@ namespace GetRouteNameSpace
 		SELECT_RESULT_NO_FIRST_ROUTE,
 		SELECT_RESULT_NO_SECOND_ROUTE,
 		GET_ONE_SECOND_ROUTE_INFOR_SUCCEED,
-		GET_TRANSIT_VEHICLE__GET_FAILED_SECOND_ROUTE_ERROR
+		GET_TRANSIT_VEHICLE__GET_FAILED_SECOND_ROUTE_ERROR,
+		GET_RES_FAILED
 	};
 	/*
 		获取任意中转交通工具的状态枚举

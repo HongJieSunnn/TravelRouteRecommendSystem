@@ -37,6 +37,16 @@ CloseStatue InitMySQL::closeGlobleMySQL()
 	return CLOSE_FAILED;
 }
 
+MYSQL InitMySQL::getMySQL(string host, string user_name, string password, string database_name, int port, string character_set)
+{
+	MYSQL db;
+	mysql_library_init(0, NULL, NULL);
+	mysql_init(&db);
+	mysql_options(&db, MYSQL_SET_CHARSET_NAME, character_set.c_str());
+	mysql_real_connect(&db, host.c_str(), user_name.c_str(), password.c_str(), database_name.c_str(), port, NULL, 0);
+	return db;
+}
+
 int InitMySQL::resetGlobleMySQL(string host, string user_name, string password, string database_name, int port, string character_set)
 {
 	int close_statu= closeGlobleMySQL();
@@ -53,12 +63,27 @@ MYSQL* InitMySQL::DB()
 	return &db;
 }
 
+MYSQL InitMySQL::copyDB()
+{
+	return db;
+}
+
 MYSQL_RES* InitMySQL::execSQLToGetResult(string SQL)
 {
 	//每次执行都要把它赋值成nullptr
 	//否则若此次结果为空 会返回上次结果
 	result = nullptr;
 	if (mysql_query(&db, SQL.c_str())==0)
+	{
+		result = mysql_store_result(&db);
+	}
+	return result;
+}
+
+MYSQL_RES* InitMySQL::execSQLToGetResult(MYSQL& db, string SQL)
+{
+	MYSQL_RES* result = nullptr;
+	if (mysql_query(&db, SQL.c_str()) == 0)
 	{
 		result = mysql_store_result(&db);
 	}

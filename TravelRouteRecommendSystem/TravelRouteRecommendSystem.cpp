@@ -20,6 +20,7 @@ int main()
 {
 	initDB();//初始化数据库
 	initRedis();//初始化redis
+	cout << "草";
 
 	//新建一个UserRequirement对象测试一下
 	char** start_cities = new char* [2];

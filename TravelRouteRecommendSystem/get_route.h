@@ -4,6 +4,7 @@
 #include<queue>
 #include<algorithm>
 #include<thread>
+#include<mutex>
 #include"user_requirement.h"
 #include"init_mysql.h"
 #include"graph.h"
@@ -201,6 +202,7 @@ private:
 	vector<VertexData<string>> vertex_datas;
 	vector<pair<VertexData<string>, VertexData<string>>> edges;
 	vector<vector<vector<Vehicle*>>> weights;
+	std::mutex mu;
 public:
 	GetRoute(UserRequirement requirement)
 	{

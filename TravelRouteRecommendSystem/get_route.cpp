@@ -226,63 +226,13 @@ GetRouteNameSpace::GetTransitVehicleStatue GetRoute::getTransitVehicleInfor(int 
 			row = mysql_fetch_row(res);
 		}
 		int size = first_route_divide_by_station.size();
-		int async_times = size / 5;//5线程个同时进行的次数
-		int sync_times = size % 5;//一个线程一个线程执行 其实就相当于同步执行了
 		auto routes_one_station = first_route_divide_by_station.begin();
-		getTransitVehicleInforSecondRoute(now_index, routes_one_station->second, temp_weights);
-		for (int j=0;j<async_times;j++)
+		for (int j=0;j<size;j++)
 		{
 			thread thread_1(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station->second, ref(temp_weights));
-			thread thread_2(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, ref(temp_weights));
-			thread thread_3(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, ref(temp_weights));
-			thread thread_4(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, ref(temp_weights));
-			thread thread_5(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, ref(temp_weights));
-
-			thread_1.detach();
-			thread_2.detach();
-			thread_3.detach();
-			thread_4.detach();
-			thread_5.join();
+			
+			thread_1.join();
 			routes_one_station++;
-		}
-		switch (sync_times)
-		{
-		case 1:
-			{
-				thread thread_1(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station->second, ref(temp_weights));
-				thread_1.join();
-				break;
-			}
-		case 2:
-			{
-				thread thread_1(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station->second, ref(temp_weights));
-				thread thread_2(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, ref(temp_weights));
-				thread_1.detach();
-				thread_2.join();
-				break;
-			}
-		case 3:
-			{
-				thread thread_1(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station->second, ref(temp_weights));
-				thread thread_2(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, ref(temp_weights));
-				thread thread_3(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, ref(temp_weights));
-				thread_1.detach();
-				thread_2.detach();
-				thread_3.join();
-				break;
-			}
-		case 4:
-			{
-				thread thread_1(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station->second, ref(temp_weights));
-				thread thread_2(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, ref(temp_weights));
-				thread thread_3(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, ref(temp_weights));
-				thread thread_4(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, ref(temp_weights));
-				thread_1.detach();
-				thread_2.detach();
-				thread_3.detach();
-				thread_4.join();
-				break;
-			}
 		}
 		weights[now_index] = temp_weights;
 	}
@@ -352,61 +302,13 @@ GetRouteNameSpace::GetFixVehicleStatue GetRoute::getFixVehicleInfor(int now_inde
 			row = mysql_fetch_row(res);
 		}
 		int size = first_route_divide_by_station.size();
-		int async_times = size / 5;//5线程个同时进行的次数
-		int sync_times = size % 5;//一个线程一个线程执行 其实就相当于同步执行了
 		auto routes_one_station = first_route_divide_by_station.begin();
-		for (int j = 0; j < async_times; j++)
+		for (int j = 0; j < size; j++)
 		{
 			thread thread_1(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station->second, ref(temp_weights));
-			thread thread_2(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, ref(temp_weights));
-			thread thread_3(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, ref(temp_weights));
-			thread thread_4(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, ref(temp_weights));
-			thread thread_5(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, ref(temp_weights));
-
+			
 			thread_1.join();
-			thread_2.join();
-			thread_3.join();
-			thread_4.join();
-			thread_5.join();
-		}
-		switch (sync_times)
-		{
-		case 1:
-		{
-			thread thread_1(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station->second, ref(temp_weights));
-			thread_1.join();
-			break;
-		}
-		case 2:
-		{
-			thread thread_1(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station->second, ref(temp_weights));
-			thread thread_2(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, ref(temp_weights));
-			thread_1.join();
-			thread_2.join();
-			break;
-		}
-		case 3:
-		{
-			thread thread_1(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station->second, ref(temp_weights));
-			thread thread_2(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, ref(temp_weights));
-			thread thread_3(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, ref(temp_weights));
-			thread_1.join();
-			thread_2.join();
-			thread_3.join();
-			break;
-		}
-		case 4:
-		{
-			thread thread_1(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station->second, ref(temp_weights));
-			thread thread_2(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, ref(temp_weights));
-			thread thread_3(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, ref(temp_weights));
-			thread thread_4(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station++->second, ref(temp_weights));
-			thread_1.join();
-			thread_2.join();
-			thread_3.join();
-			thread_4.join();
-			break;
-		}
+			routes_one_station++;
 		}
 		weights[now_index] = temp_weights;
 	}
@@ -436,10 +338,10 @@ GetRouteNameSpace::GetTransitVehicleStatue GetRoute::getTransitVehicleInforSecon
 		getWhereSentenceKeyValueOfSecondRouteOfTrans(now_index, first_route[0], vehicle_type),
 		vehicle_type
 	);
-	InitMySQL temp;
-	MYSQL db = temp.getMySQL("cdb-j6k4d9vs.bj.tencentcdb.com", "user", "asdf3485", "tourism-recommend-sys-trafficimfor", 10255, "gbk");
 	//后半段
-	MYSQL_RES* res_second = InitMySQL::execSQLToGetResult(db,sql);//查询数据库
+	mu.lock();
+	MYSQL_RES* res_second = InitMySQL::execSQLToGetResult(sql);//查询数据库
+	mu.unlock();
 	if (res_second == nullptr)
 	{
 		return GetTransitVehicleStatue::SELECT_RESULT_NO_TABLE_EXIST;
@@ -473,7 +375,7 @@ GetRouteNameSpace::GetTransitVehicleStatue GetRoute::getTransitVehicleInforSecon
 		row_second = mysql_fetch_row(res_second);
 	}
 	//写在上面或者新的二重循环复杂度都是n^2 但是写外面好一些感觉 不用考虑自己内存释放的问题（除非使用智能指针 但是那样又有点麻烦）
-
+	
 	for (auto one_of_second_route : second_route)
 	{
 		for (auto one_of_first_route : first_route)
@@ -539,6 +441,10 @@ unordered_map<string, string> GetRoute::getWhereSentenceKeyValue(int now_index)
 	if (requirement.transitType[now_index] == UserRequirementNamespace::TRANS)
 	{
 		where_sentence.insert({ "mileage",to_string(requirement.distances[now_index]*0.65) });//火车
+		string repitive_train_id = "train_id NOT IN (SELECT train_id FROM ";
+		where_sentence.insert({ "train_id",repitive_train_id.
+			append(getTableName(requirement.start_cities[now_index],UserRequirementNamespace::HSRC)).append(" WHERE arrival_city=").
+			append(InitMySQL::toSQLString(requirement.arrive_cities[now_index]).append(")")) });
 
 		int minute_of_all = requirement.distances[now_index] / 800.0*60.0*0.65;
 		int hour = minute_of_all / 60;
@@ -950,6 +856,11 @@ string GetRoute::getSQLQuery(int now_index,vector<string> columns, string table_
 
 		sql_query.append("cost_time<");
 		sql_query.append(InitMySQL::toSQLString(where_sentence["cost_time"]));
+	}
+
+	if (where_sentence.find("train_id") != where_sentence.end() && table_name.find("火车") != string::npos)
+	{
+		sql_query.append(" AND ").append(where_sentence["train_id"]);
 	}
 
 	sql_query.append(getOrderSentence(now_index));

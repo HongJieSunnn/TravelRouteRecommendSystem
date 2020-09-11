@@ -5,16 +5,19 @@
 #include<algorithm>
 #include<thread>
 #include<mutex>
+#include<map>
 #include"user_requirement.h"
 #include"init_mysql.h"
 #include"graph.h"
 #include"graph.cpp"
 #include"vehicle.h"
+#include"init_redis.h"
 //这是主要的类 用来获取最优路径
 //TODO 不知道要把它写成父类 然后直达 转车什么的继承 还是直接写一个通用方法 支持各种方式
 using std::unordered_map;
 using std::priority_queue;
 using std::thread;
+using std::map;
 using std::ref;
 using std::make_heap;
 using std::pop_heap;
@@ -188,6 +191,77 @@ namespace GetRouteNameSpace
 		if (times_of_price < (times_of_time-0.1))//价钱倍数比时间倍数-0.1大说明太贵了
 			return false;
 		return true;
+	};
+	//往FirstRouteDivideById中判断优先级并且添加键值对 适用于飞机
+	void addKeyValueOfFirstRouteDivideByIdAP(unordered_map<string,Vehicle*>& first_route_divede_by_id,const MYSQL_ROW& row)
+	{
+		//如果该班次已存在
+		if (first_route_divede_by_id.find(row[0]) != first_route_divede_by_id.end())
+		{
+			string station_name = row[7];
+			int now_priority_level = InitRedis::getPriorityLevel(station_name);
+			int old_priority_level = InitRedis::getPriorityLevel(first_route_divede_by_id[row[0]]->get_arrival_station());
+			if (now_priority_level != -1 && now_priority_level != 0)
+			{
+				if (now_priority_level > old_priority_level)//如果新的优先级更大
+				{
+					first_route_divede_by_id[row[0]] == new AirPlane
+					(
+						row[0], row[1], row[2], row[3], row[4], row[5],
+						row[6], row[7], row[8], row[9], row[10], row[11], row[12]
+					);
+				}
+			}
+		}
+		else//如果不存在 直接赋值
+		{
+			first_route_divede_by_id[row[0]] = new AirPlane
+			(
+				row[0], row[1], row[2], row[3], row[4], row[5],
+				row[6], row[7], row[8], row[9], row[10], row[11], row[12]
+			);
+		}
+	}
+	//往FirstRouteDivideById中判断优先级并且添加键值对 适用于火车
+	void addKeyValueOfFirstRouteDivideByIdHSRC(unordered_map<string, Vehicle*>& first_route_divede_by_id, const MYSQL_ROW& row)
+	{
+		if (first_route_divede_by_id.find(row[0]) != first_route_divede_by_id.end())
+		{
+			string station_name = row[8];
+			int now_priority_level = InitRedis::getPriorityLevel(station_name);
+			int old_priority_level = InitRedis::getPriorityLevel(first_route_divede_by_id[row[0]]->get_arrival_station());
+			if (now_priority_level != -1 && now_priority_level != 0)
+			{
+				if (now_priority_level > old_priority_level)//如果新的优先级更大
+				{
+					first_route_divede_by_id[row[0]] == new HSRC
+					(
+						row[0], row[1], row[2], row[3], row[4], row[5],
+						row[6], row[7], row[8], row[9], row[10], row[11],
+						row[12], row[13]
+					);
+				}
+			}
+		}
+		else
+		{
+			first_route_divede_by_id[row[0]] = new HSRC
+			(
+				row[0], row[1], row[2], row[3], row[4], row[5],
+				row[6], row[7], row[8], row[9], row[10], row[11],
+				row[12], row[13]
+			);
+		}
+	}
+	//结构MapCmpOfFirstRouteDivideByStation 重载运算符() 目的是作为map的比较函数
+	struct MapCmpOfFirstRouteDivideByStation
+	{
+		bool operator()(const string& key1, const string& key2) const
+		{
+			if (InitRedis::getPriorityLevel(key1) > InitRedis::getPriorityLevel(key2))
+				return true;
+			return false;
+		}
 	};
 }
 /*

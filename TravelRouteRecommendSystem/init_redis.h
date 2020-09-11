@@ -64,6 +64,12 @@ public:
 	static RedisReplyType getRedisReply(string redis_command);
 
 	/*
+	* 获取优先级
+	* table_name:需要获取优先级的表名
+	*/
+	static int getPriorityLevel(string key);
+
+	/*
 		从redis里获取从go后端传过来的数据
 		填入到用户需求结构里 返回该用户需求 以便后续推荐
 	*/

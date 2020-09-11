@@ -179,7 +179,10 @@ GetRouteNameSpace::GetTransitVehicleStatue GetRoute::getTransitVehicleInfor(int 
 		MYSQL_ROW row = NULL;
 		row = mysql_fetch_row(res);
 		//哈希表 键是第二段路开始的站点 也就是第一段路的arrival_station 用这个来分类 直接查询时间最早的那个 然后再来分配给对应的第一段路 并且可以开多线程 直接对所有站点同时读
-		unordered_map<string, vector<Vehicle*>> first_route_divide_by_station;
+		//通过站点的优先级排序
+		map<string, vector<Vehicle*>,MapCmpOfFirstRouteDivideByStation> first_route_divide_by_station;
+		//哈希表 键是train_id 值是second_route的start_station 这个表用来使相同的train_id只出现一次 例如 福州——连江 连江-南京 和 福州-罗源 罗源-南京是同一班车 那么我们选取优先级高的那个
+		unordered_map<string, Vehicle*> first_route_divede_by_id;
 		//最终结果 也就是多个两段路的集合
 		vector<vector<Vehicle*>> temp_weights;
 		while (row != NULL)
@@ -188,42 +191,28 @@ GetRouteNameSpace::GetTransitVehicleStatue GetRoute::getTransitVehicleInfor(int 
 			switch (this->requirement.vehicleType[now_index])
 			{
 			case UserRequirementNamespace::AIRPLANE:
-				first_route_divide_by_station[row[7]].emplace_back(new AirPlane
-				(
-					row[0], row[1], row[2], row[3], row[4], row[5],
-					row[6], row[7], row[8], row[9], row[10], row[11], row[12]
-				));
+				addKeyValueOfFirstRouteDivideByIdAP(first_route_divede_by_id, row);
 				break;
 			case UserRequirementNamespace::HSRC:
-				first_route_divide_by_station[row[8]].emplace_back(new HSRC
-				(
-					row[0], row[1], row[2], row[3], row[4], row[5],
-					row[6], row[7], row[8], row[9], row[10], row[11],
-					row[12], row[13]
-				));
+				addKeyValueOfFirstRouteDivideByIdHSRC(first_route_divede_by_id, row);
 				break;
 			case UserRequirementNamespace::ALL_VEHICLE:
 				if (sql_query[i].find("火车") != string::npos)
 				{
-					first_route_divide_by_station[row[8]].emplace_back(new HSRC
-					(
-						row[0], row[1], row[2], row[3], row[4], row[5],
-						row[6], row[7], row[8], row[9], row[10], row[11],
-						row[12], row[13]
-					));
+					addKeyValueOfFirstRouteDivideByIdHSRC(first_route_divede_by_id, row);
 				}
 				else
 				{
-					first_route_divide_by_station[row[7]].emplace_back(new AirPlane
-					(
-						row[0], row[1], row[2], row[3], row[4], row[5],
-						row[6], row[7], row[8], row[9], row[10], row[11], row[12]
-					));
-					break;
+					addKeyValueOfFirstRouteDivideByIdAP(first_route_divede_by_id, row);
 				}
 				break;
 			}
 			row = mysql_fetch_row(res);
+		}
+		//遍历 first_route_divede_by_id 把数据添加到 first_route_divede_by_station中
+		for (const auto& train : first_route_divede_by_id)
+		{
+			first_route_divide_by_station[train.second->get_arrival_station()].push_back(train.second);
 		}
 		int size = first_route_divide_by_station.size();
 		auto routes_one_station = first_route_divide_by_station.begin();
@@ -241,78 +230,31 @@ GetRouteNameSpace::GetTransitVehicleStatue GetRoute::getTransitVehicleInfor(int 
 
 GetRouteNameSpace::GetFixVehicleStatue GetRoute::getFixVehicleInfor(int now_index, vector<string> sql_query)
 {
-	for (int i = 0; i < sql_query.size(); i++)
+	auto statue = getTransitVehicleInfor(now_index, sql_query);
+	switch (statue)
 	{
-		MYSQL_RES* res = InitMySQL::execSQLToGetResult(sql_query[i]);
-		if (res == nullptr)
-		{
-			GetFixVehicleStatue::GET_RES_FAILED;
-		}
-		int rows_count = res->row_count;
-		if (rows_count == 0)
-			return GetFixVehicleStatue::SELECT_RESULT_NO_FIRST_ROUTE;
-
-		MYSQL_ROW row = NULL;
-		row = mysql_fetch_row(res);
-		//哈希表 键是第二段路开始的站点 也就是第一段路的arrival_station 用这个来分类 直接查询时间最早的那个 然后再来分配给对应的第一段路 并且可以开多线程 直接对所有站点同时读
-		unordered_map<string, vector<Vehicle*>> first_route_divide_by_station;
-		//最终结果 也就是多个两段路的集合
-		vector<vector<Vehicle*>> temp_weights;
-		while (row != NULL)
-		{
-			//前半段
-			switch (this->requirement.vehicleType[now_index])
-			{
-			case UserRequirementNamespace::AIRPLANE:
-				first_route_divide_by_station[row[7]].emplace_back(new AirPlane
-				(
-					row[0], row[1], row[2], row[3], row[4], row[5],
-					row[6], row[7], row[8], row[9], row[10], row[11], row[12]
-				));
-				break;
-			case UserRequirementNamespace::HSRC:
-				first_route_divide_by_station[row[8]].emplace_back(new HSRC
-				(
-					row[0], row[1], row[2], row[3], row[4], row[5],
-					row[6], row[7], row[8], row[9], row[10], row[11],
-					row[12], row[13]
-				));
-				break;
-			case UserRequirementNamespace::ALL_VEHICLE:
-				if (sql_query[i].find("火车") != string::npos)
-				{
-					first_route_divide_by_station[row[8]].emplace_back(new HSRC
-					(
-						row[0], row[1], row[2], row[3], row[4], row[5],
-						row[6], row[7], row[8], row[9], row[10], row[11],
-						row[12], row[13]
-					));
-				}
-				else
-				{
-					first_route_divide_by_station[row[7]].emplace_back(new AirPlane
-					(
-						row[0], row[1], row[2], row[3], row[4], row[5],
-						row[6], row[7], row[8], row[9], row[10], row[11], row[12]
-					));
-					break;
-				}
-				break;
-			}
-			row = mysql_fetch_row(res);
-		}
-		int size = first_route_divide_by_station.size();
-		auto routes_one_station = first_route_divide_by_station.begin();
-		for (int j = 0; j < size; j++)
-		{
-			thread thread_1(&GetRoute::getTransitVehicleInforSecondRoute, this, now_index, routes_one_station->second, ref(temp_weights));
-			
-			thread_1.join();
-			routes_one_station++;
-		}
-		weights[now_index] = temp_weights;
+	case GetRouteNameSpace::GetTransitVehicleStatue::GET_TRANSIT_VEHICLE_FAILED:
+		return GetFixVehicleStatue::GET_FIX_VEHICLE_FAILED;
+		break;
+	case GetRouteNameSpace::GetTransitVehicleStatue::GET_TRANSIT_VEHICLE_SUCCEED:
+		return GetFixVehicleStatue::GET_FIX_VEHICLE_SUCCEED;
+		break;
+	case GetRouteNameSpace::GetTransitVehicleStatue::SELECT_RESULT_NO_FIRST_ROUTE:
+		return GetFixVehicleStatue::SELECT_RESULT_NO_FIRST_ROUTE;
+		break;
+	case GetRouteNameSpace::GetTransitVehicleStatue::SELECT_RESULT_NO_SECOND_ROUTE:
+		return GetFixVehicleStatue::SELECT_RESULT_NO_SECOND_ROUTE;
+		break;
+	case GetRouteNameSpace::GetTransitVehicleStatue::GET_ONE_SECOND_ROUTE_INFOR_SUCCEED:
+		return GetFixVehicleStatue::GET_ONE_SECOND_ROUTE_INFOR_SUCCEED;
+		break;
+	case GetRouteNameSpace::GetTransitVehicleStatue::GET_TRANSIT_VEHICLE__GET_FAILED_SECOND_ROUTE_ERROR:
+		return GetFixVehicleStatue::GET_TRANSIT_VEHICLE__GET_FAILED_SECOND_ROUTE_ERROR;
+		break;
+	case GetRouteNameSpace::GetTransitVehicleStatue::GET_RES_FAILED:
+		return GetFixVehicleStatue::GET_RES_FAILED;
+		break;
 	}
-	return GetFixVehicleStatue::GET_FIX_VEHICLE_SUCCEED;
 }
 
 GetRouteNameSpace::GetTransitVehicleStatue GetRoute::getTransitVehicleInforSecondRoute(int now_index, vector<Vehicle*> first_route, vector<vector<Vehicle*>>& temp_weights)

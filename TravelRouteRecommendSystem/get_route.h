@@ -3,15 +3,22 @@
 #include<unordered_map>
 #include<queue>
 #include<algorithm>
+#include<thread>
+#include<mutex>
+#include<map>
 #include"user_requirement.h"
 #include"init_mysql.h"
 #include"graph.h"
 #include"graph.cpp"
 #include"vehicle.h"
+#include"init_redis.h"
 //这是主要的类 用来获取最优路径
 //TODO 不知道要把它写成父类 然后直达 转车什么的继承 还是直接写一个通用方法 支持各种方式
 using std::unordered_map;
 using std::priority_queue;
+using std::thread;
+using std::map;
+using std::ref;
 using std::make_heap;
 using std::pop_heap;
 using std::push_heap;
@@ -55,7 +62,8 @@ namespace GetRouteNameSpace
 	{
 		GET_DIRECT_VEHICLE_FAILED,
 		GET_DIRECT_VEHICLE_SUCCEED,
-		SELECT_RESULT_EMPTY
+		SELECT_RESULT_EMPTY,
+		GET_RES_FAILED
 	};
 	/*
 		获取中转交通工具的状态枚举
@@ -68,7 +76,9 @@ namespace GetRouteNameSpace
 		SELECT_RESULT_NO_SECOND_ROUTE,
 		GET_ONE_SECOND_ROUTE_INFOR_SUCCEED,
 		GET_TRANSIT_VEHICLE__GET_FAILED_SECOND_ROUTE_ERROR,
-		SELECT_RESULT_NO_TABLE_EXIST
+		SELECT_RESULT_NO_TABLE_EXIST,
+		GET_RES_FAILED,
+		GOT_THIRDTY_WEIGHTS
 	};
 	/*
 		获取混合交通工具的状态枚举
@@ -80,7 +90,8 @@ namespace GetRouteNameSpace
 		SELECT_RESULT_NO_FIRST_ROUTE,
 		SELECT_RESULT_NO_SECOND_ROUTE,
 		GET_ONE_SECOND_ROUTE_INFOR_SUCCEED,
-		GET_TRANSIT_VEHICLE__GET_FAILED_SECOND_ROUTE_ERROR
+		GET_TRANSIT_VEHICLE__GET_FAILED_SECOND_ROUTE_ERROR,
+		GET_RES_FAILED
 	};
 	/*
 		获取任意中转交通工具的状态枚举
@@ -96,7 +107,7 @@ namespace GetRouteNameSpace
 	auto getTimeOfVehicleOneRoute = [](vector<Vehicle*> route)->int
 	{
 		int size = route.size();
-		string type = NULL;
+		string type;
 		//直达
 		if (size == 1)
 		{
@@ -118,7 +129,7 @@ namespace GetRouteNameSpace
 	auto getPriceOfVehicleOneRoute = [](vector<Vehicle*> route)->float
 	{
 		float res = 0;
-		string type = NULL;
+		string type = "";
 		for (int i = 0; i < route.size(); i++)
 		{
 			type = route[i]->getVehicleType();
@@ -130,23 +141,16 @@ namespace GetRouteNameSpace
 
 			if (type == AIRPLANE_TYPE)
 			{
-				res += atof(route[i]->get_ticket_price().c_str());
+				string ticket_price = route[i]->get_ticket_price().substr(1);
+				int index_of_QI = ticket_price.find("起");
+				ticket_price = ticket_price.substr(0, index_of_QI);
+				string discount_rate_str = route[i]->get_discount().substr(6,3);
+				float discount_rate = atof(discount_rate_str.c_str());
+				res += atof(ticket_price.c_str())/ (discount_rate/10);
 			}
 		}
 
 		return res;
-	};
-
-	//同种类型的lambda表达式 用来给优先队列 时间优先 return false说明就是按照顺序 先进入的第一个出
-	auto sameTypeVehicleGreater_TimeFirst = [](vector<Vehicle*> route1,vector<Vehicle*> route2)-> bool
-	{
-		return true;
-	};
-
-	//同种非时间优先就按进入顺序排序 
-	auto sameTypeVehicleGreater=[](vector<Vehicle*> route1, vector<Vehicle*> route2)->bool
-	{
-		return true;
 	};
 
 	//不同种时间优先 适用于 all_vehicle
@@ -157,16 +161,21 @@ namespace GetRouteNameSpace
 
 		float price1 = getPriceOfVehicleOneRoute(route1);
 		float price2 = getPriceOfVehicleOneRoute(route2);
-		//时间大的除以时间小的 就是倍数 时间小的乘上倍数 比较平衡一点
-		float times = price1 > price2 ? (price1 / price2) : (price2 / price1);//倍数
-
-		time1 > time2 ? time2 *= times : time1 *= times;
+		float times = price1 / price2;//倍数
+		if (time1 < time2)//如果时间1小于时间2 那么1为飞机2为火车 那么用来比较的时间为小的时间乘倍数再乘2(乘2是我规定的) 这里是让小的时间大4倍
+		{
+			time1 *= times * 2;
+		}
+		else if (time1 > time2)//如果时间1大于时间2 说明1为火车 那么此时要乘以倍数除二才能比较 都是乘是因为倍数此时会小于1 这里是让大的时间小4倍
+		{
+			time1 *= (times / 2);
+		}
 
 		if (time1 < time2)
 			return true;
 		return false;
 	};
-	//适用于 all_vehicle
+	//适用于 all_vehicle include fix
 	auto differentTypeVehicleGreater = [](vector<Vehicle*> route1, vector<Vehicle*> route2)->bool
 	{
 		float time1 = getTimeOfVehicleOneRoute(route1);
@@ -175,12 +184,30 @@ namespace GetRouteNameSpace
 		float price1 = getPriceOfVehicleOneRoute(route1);
 		float price2 = getPriceOfVehicleOneRoute(route2);
 
-		float times_of_price= price1 > price2 ? (price1 / price2) : (price2 / price1);//价钱倍数
-		float times_of_time= time1 > time2 ? (time1 / time2) : (time2 / time1);//时间倍数
+		return (time1 + price1) < (time2 + price2);//直接比较时间+钱 当然这里如果飞机用打折后的钱就很不平衡 所以飞机的price是打折前的price
+	};
+	//同种类型的lambda表达式 用来给优先队列 时间优先 return false说明就是按照顺序 先进入的第一个出
+	auto sameTypeVehicleGreater_TimeFirst = [](vector<Vehicle*> route1,vector<Vehicle*> route2)-> bool
+	{
+		float time1 = getTimeOfVehicleOneRoute(route1);
+		float time2 = getTimeOfVehicleOneRoute(route2);
 
-		if (times_of_price < (times_of_time-0.1))//价钱倍数比时间倍数-0.1大说明太贵了
+		return time1 < time2;
+	};
+	//同种非时间优先就按进入顺序排序 
+	auto sameTypeVehicleGreater=[](vector<Vehicle*> route1, vector<Vehicle*> route2)->bool
+	{
+		return differentTypeVehicleGreater(route1,route2);
+	};
+	//结构MapCmpOfFirstRouteDivideByStation 重载运算符() 目的是作为map的比较函数
+	struct MapCmpOfFirstRouteDivideByStation
+	{
+		bool operator()(const string& key1, const string& key2) const
+		{
+			if (InitRedis::getPriorityLevel(key1) > InitRedis::getPriorityLevel(key2))
+				return true;
 			return false;
-		return true;
+		}
 	};
 }
 /*
@@ -195,6 +222,7 @@ private:
 	vector<VertexData<string>> vertex_datas;
 	vector<pair<VertexData<string>, VertexData<string>>> edges;
 	vector<vector<vector<Vehicle*>>> weights;
+	std::mutex mu;
 public:
 	GetRoute(UserRequirement requirement)
 	{
@@ -262,9 +290,9 @@ public:
 	/*
 		获取转车的后半段 并且把符合条件的写入weights
 		FIX_TRANSIT和TRANSIT通用(获取sql时不同)
-	*
+	* first_route:第一段路相同arrival_station的集合
 	*/
-	GetRouteNameSpace::GetTransitVehicleStatue getTransitVehicleInforSecondRoute(int now_index, string start_city_name, Vehicle* first_route, vector<vector<Vehicle*>>& temp_weights);
+	GetRouteNameSpace::GetTransitVehicleStatue getTransitVehicleInforSecondRoute(int now_index, vector<Vehicle*> first_route, vector<vector<Vehicle*>>& temp_weights);
 
 	/*
 		获取任意中转的交通工具信息
@@ -275,19 +303,12 @@ public:
 	/*
 		根据requirement里的条件合成where
 	* now_index:requirement中 例如 start_cities 是数组 那么需要传入当前遍历到的那组城市下标 才能获得当前的城市
-	* second_route:是否是中转的第二跳路布尔变量 默认为false 用来区分是否要使用arrival_time
 	*/
 	unordered_map<string, string> getWhereSentenceKeyValue(int now_index);
 
 	/*
 		根据vehicle里的条件合成where(用于转车的后半段) 并且符合条件的写入weights
-	* 
-	*/
-	unordered_map<string, string> getWhereSentenceKeyValueOfSecondRouteOfTrans(int now_index,Vehicle* vehicle);
-
-	/*
-		根据vehicle里的条件合成where(用于转车的后半段) 并且符合条件的写入weights
-		适用于 all_transit+all_vehicle的时候
+		适用于 all_vehicle的时候
 	*
 	*/
 	unordered_map<string, string> getWhereSentenceKeyValueOfSecondRouteOfTrans(int now_index, Vehicle* vehicle,UserRequirementNamespace::VehicleTypeEnum vehicle_type);
@@ -329,14 +350,7 @@ public:
 	string getSQLQuery(int now_index, vector<string> columns, string table_name, unordered_map<string, string> where_sentence);
 
 	/*
-		获得转车的第二段路线 例如 福州-南京可以分解成 福州-杭州(getSQLQuery) 然后该方法获得 杭州-福州 在getTransitVehicleInfor中使用 
-		因为需要先对前半段做SQL查询 才能知道后半段的起始城市
-	* 
-	*/
-	string getSQLQuerySecondRouteOfTrans(int now_index, vector<string> columns, string table_name, unordered_map<string, string> where_sentence);
-
-	/*
-		获得转车的第二段路线 适用于 all_transit+all_vehicle的时候
+		获得转车的第二段路线 适用于 all_vehicle的时候
 	*
 	*/
 	string getSQLQuerySecondRouteOfTrans(int now_index, vector<string> columns, string table_name, unordered_map<string, string> where_sentence,UserRequirementNamespace::VehicleTypeEnum vehicle_type);

@@ -24,6 +24,25 @@ RedisReplyType InitRedis::getRedisReply(string redis_command)
 	return redis_reply->type;//若为6即出错 其它即为获得的结果数据的类型 后续通过函数dealRedisRelyErr来处理错误
 }
 
+int InitRedis::getPriorityLevel(string key)
+{
+	string redis_command = "GET ";
+	redis_command.append(key);
+	int type = getRedisReply(redis_command);
+	if (type != 6&&type==3)
+	{
+		return redis_reply->integer;
+	}
+	else if (type != 6 && type == 1)
+	{
+		return atoi(redis_reply->str);
+	}
+	else
+	{
+		return -1;//获取错误
+	}
+}
+
 UserRequirement InitRedis::getInforFromGoByRedis()
 {
 	return UserRequirement();

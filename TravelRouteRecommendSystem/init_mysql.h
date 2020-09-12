@@ -83,6 +83,17 @@ public:
 	static InitStatue initGlobleMySQL(string host, string user_name, string password, string database_name,int port,string character_set="gbk");
 
 	/*
+		初始化数据库实例的静态成员变量 这样数据库只需要初始化一次就可以在其它任何地方使用
+		*host mysql地址
+		*user_name 登陆账户
+		*password 密码
+		*database_name 要打开的那个数据库名称
+		*port 端口号
+		*character_set 字符集 c++默认 gbk 而数据库一般默认utf-8 不设置会出现乱码
+	*/
+	MYSQL getMySQL(string host, string user_name, string password, string database_name, int port, string character_set = "gbk");
+
+	/*
 		重新设置mysql实例
 	*/
 	static int resetGlobleMySQL(string host, string user_name, string password, string database_name, int port, string character_set = "gbk");
@@ -92,6 +103,10 @@ public:
 		返回db句柄的指针
 	*/
 	static MYSQL* DB();
+	/*
+	* 拷贝当前的db
+	*/
+	static MYSQL copyDB();
 
 	/*
 		通过SQL语句获得执行结果
@@ -99,6 +114,8 @@ public:
 		这样可以避免返回临时指针问题，也可以减少空间浪费
 	*/
 	static MYSQL_RES* execSQLToGetResult(string SQL);
+
+	static MYSQL_RES* execSQLToGetResult(MYSQL& db,string SQL);
 
 	/*
 	* 给字符串加上''用来sql查询

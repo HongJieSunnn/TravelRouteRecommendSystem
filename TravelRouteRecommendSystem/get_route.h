@@ -77,7 +77,8 @@ namespace GetRouteNameSpace
 		GET_ONE_SECOND_ROUTE_INFOR_SUCCEED,
 		GET_TRANSIT_VEHICLE__GET_FAILED_SECOND_ROUTE_ERROR,
 		SELECT_RESULT_NO_TABLE_EXIST,
-		GET_RES_FAILED
+		GET_RES_FAILED,
+		GOT_THIRDTY_WEIGHTS
 	};
 	/*
 		获取混合交通工具的状态枚举
@@ -128,7 +129,7 @@ namespace GetRouteNameSpace
 	auto getPriceOfVehicleOneRoute = [](vector<Vehicle*> route)->float
 	{
 		float res = 0;
-		string type = NULL;
+		string type = "";
 		for (int i = 0; i < route.size(); i++)
 		{
 			type = route[i]->getVehicleType();
@@ -140,23 +141,16 @@ namespace GetRouteNameSpace
 
 			if (type == AIRPLANE_TYPE)
 			{
-				res += atof(route[i]->get_ticket_price().c_str());
+				string ticket_price = route[i]->get_ticket_price().substr(1);
+				int index_of_QI = ticket_price.find("起");
+				ticket_price = ticket_price.substr(0, index_of_QI);
+				string discount_rate_str = route[i]->get_discount().substr(6,3);
+				float discount_rate = atof(discount_rate_str.c_str());
+				res += atof(ticket_price.c_str())/ (discount_rate/10);
 			}
 		}
 
 		return res;
-	};
-
-	//同种类型的lambda表达式 用来给优先队列 时间优先 return false说明就是按照顺序 先进入的第一个出
-	auto sameTypeVehicleGreater_TimeFirst = [](vector<Vehicle*> route1,vector<Vehicle*> route2)-> bool
-	{
-		return true;
-	};
-
-	//同种非时间优先就按进入顺序排序 
-	auto sameTypeVehicleGreater=[](vector<Vehicle*> route1, vector<Vehicle*> route2)->bool
-	{
-		return true;
 	};
 
 	//不同种时间优先 适用于 all_vehicle
@@ -167,16 +161,21 @@ namespace GetRouteNameSpace
 
 		float price1 = getPriceOfVehicleOneRoute(route1);
 		float price2 = getPriceOfVehicleOneRoute(route2);
-		//时间大的除以时间小的 就是倍数 时间小的乘上倍数 比较平衡一点
-		float times = price1 > price2 ? (price1 / price2) : (price2 / price1);//倍数
-
-		time1 > time2 ? time2 *= times : time1 *= times;
+		float times = price1 / price2;//倍数
+		if (time1 < time2)//如果时间1小于时间2 那么1为飞机2为火车 那么用来比较的时间为小的时间乘倍数再乘2(乘2是我规定的) 这里是让小的时间大4倍
+		{
+			time1 *= times * 2;
+		}
+		else if (time1 > time2)//如果时间1大于时间2 说明1为火车 那么此时要乘以倍数除二才能比较 都是乘是因为倍数此时会小于1 这里是让大的时间小4倍
+		{
+			time1 *= (times / 2);
+		}
 
 		if (time1 < time2)
 			return true;
 		return false;
 	};
-	//适用于 all_vehicle
+	//适用于 all_vehicle include fix
 	auto differentTypeVehicleGreater = [](vector<Vehicle*> route1, vector<Vehicle*> route2)->bool
 	{
 		float time1 = getTimeOfVehicleOneRoute(route1);
@@ -185,74 +184,21 @@ namespace GetRouteNameSpace
 		float price1 = getPriceOfVehicleOneRoute(route1);
 		float price2 = getPriceOfVehicleOneRoute(route2);
 
-		float times_of_price= price1 > price2 ? (price1 / price2) : (price2 / price1);//价钱倍数
-		float times_of_time= time1 > time2 ? (time1 / time2) : (time2 / time1);//时间倍数
-
-		if (times_of_price < (times_of_time-0.1))//价钱倍数比时间倍数-0.1大说明太贵了
-			return false;
-		return true;
+		return (time1 + price1) < (time2 + price2);//直接比较时间+钱 当然这里如果飞机用打折后的钱就很不平衡 所以飞机的price是打折前的price
 	};
-	//往FirstRouteDivideById中判断优先级并且添加键值对 适用于飞机
-	void addKeyValueOfFirstRouteDivideByIdAP(unordered_map<string,Vehicle*>& first_route_divede_by_id,const MYSQL_ROW& row)
+	//同种类型的lambda表达式 用来给优先队列 时间优先 return false说明就是按照顺序 先进入的第一个出
+	auto sameTypeVehicleGreater_TimeFirst = [](vector<Vehicle*> route1,vector<Vehicle*> route2)-> bool
 	{
-		//如果该班次已存在
-		if (first_route_divede_by_id.find(row[0]) != first_route_divede_by_id.end())
-		{
-			string station_name = row[7];
-			int now_priority_level = InitRedis::getPriorityLevel(station_name);
-			int old_priority_level = InitRedis::getPriorityLevel(first_route_divede_by_id[row[0]]->get_arrival_station());
-			if (now_priority_level != -1 && now_priority_level != 0)
-			{
-				if (now_priority_level > old_priority_level)//如果新的优先级更大
-				{
-					first_route_divede_by_id[row[0]] == new AirPlane
-					(
-						row[0], row[1], row[2], row[3], row[4], row[5],
-						row[6], row[7], row[8], row[9], row[10], row[11], row[12]
-					);
-				}
-			}
-		}
-		else//如果不存在 直接赋值
-		{
-			first_route_divede_by_id[row[0]] = new AirPlane
-			(
-				row[0], row[1], row[2], row[3], row[4], row[5],
-				row[6], row[7], row[8], row[9], row[10], row[11], row[12]
-			);
-		}
-	}
-	//往FirstRouteDivideById中判断优先级并且添加键值对 适用于火车
-	void addKeyValueOfFirstRouteDivideByIdHSRC(unordered_map<string, Vehicle*>& first_route_divede_by_id, const MYSQL_ROW& row)
+		float time1 = getTimeOfVehicleOneRoute(route1);
+		float time2 = getTimeOfVehicleOneRoute(route2);
+
+		return time1 < time2;
+	};
+	//同种非时间优先就按进入顺序排序 
+	auto sameTypeVehicleGreater=[](vector<Vehicle*> route1, vector<Vehicle*> route2)->bool
 	{
-		if (first_route_divede_by_id.find(row[0]) != first_route_divede_by_id.end())
-		{
-			string station_name = row[8];
-			int now_priority_level = InitRedis::getPriorityLevel(station_name);
-			int old_priority_level = InitRedis::getPriorityLevel(first_route_divede_by_id[row[0]]->get_arrival_station());
-			if (now_priority_level != -1 && now_priority_level != 0)
-			{
-				if (now_priority_level > old_priority_level)//如果新的优先级更大
-				{
-					first_route_divede_by_id[row[0]] == new HSRC
-					(
-						row[0], row[1], row[2], row[3], row[4], row[5],
-						row[6], row[7], row[8], row[9], row[10], row[11],
-						row[12], row[13]
-					);
-				}
-			}
-		}
-		else
-		{
-			first_route_divede_by_id[row[0]] = new HSRC
-			(
-				row[0], row[1], row[2], row[3], row[4], row[5],
-				row[6], row[7], row[8], row[9], row[10], row[11],
-				row[12], row[13]
-			);
-		}
-	}
+		return differentTypeVehicleGreater(route1,route2);
+	};
 	//结构MapCmpOfFirstRouteDivideByStation 重载运算符() 目的是作为map的比较函数
 	struct MapCmpOfFirstRouteDivideByStation
 	{
@@ -357,19 +303,12 @@ public:
 	/*
 		根据requirement里的条件合成where
 	* now_index:requirement中 例如 start_cities 是数组 那么需要传入当前遍历到的那组城市下标 才能获得当前的城市
-	* second_route:是否是中转的第二跳路布尔变量 默认为false 用来区分是否要使用arrival_time
 	*/
 	unordered_map<string, string> getWhereSentenceKeyValue(int now_index);
 
 	/*
 		根据vehicle里的条件合成where(用于转车的后半段) 并且符合条件的写入weights
-	* 
-	*/
-	unordered_map<string, string> getWhereSentenceKeyValueOfSecondRouteOfTrans(int now_index,Vehicle* vehicle);
-
-	/*
-		根据vehicle里的条件合成where(用于转车的后半段) 并且符合条件的写入weights
-		适用于 all_transit+all_vehicle的时候
+		适用于 all_vehicle的时候
 	*
 	*/
 	unordered_map<string, string> getWhereSentenceKeyValueOfSecondRouteOfTrans(int now_index, Vehicle* vehicle,UserRequirementNamespace::VehicleTypeEnum vehicle_type);
@@ -411,14 +350,7 @@ public:
 	string getSQLQuery(int now_index, vector<string> columns, string table_name, unordered_map<string, string> where_sentence);
 
 	/*
-		获得转车的第二段路线 例如 福州-南京可以分解成 福州-杭州(getSQLQuery) 然后该方法获得 杭州-福州 在getTransitVehicleInfor中使用 
-		因为需要先对前半段做SQL查询 才能知道后半段的起始城市
-	* 
-	*/
-	string getSQLQuerySecondRouteOfTrans(int now_index, vector<string> columns, string table_name, unordered_map<string, string> where_sentence);
-
-	/*
-		获得转车的第二段路线 适用于 all_transit+all_vehicle的时候
+		获得转车的第二段路线 适用于 all_vehicle的时候
 	*
 	*/
 	string getSQLQuerySecondRouteOfTrans(int now_index, vector<string> columns, string table_name, unordered_map<string, string> where_sentence,UserRequirementNamespace::VehicleTypeEnum vehicle_type);

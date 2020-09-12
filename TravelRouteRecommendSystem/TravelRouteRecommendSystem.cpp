@@ -20,16 +20,15 @@ int main()
 {
 	initDB();//初始化数据库
 	initRedis();//初始化redis
-	cout << "草";
 
 	//新建一个UserRequirement对象测试一下
 	char** start_cities = new char* [2];
 	start_cities[0] = (char*)"福州";
-	start_cities[1] = (char*)"南京";
+	start_cities[1] = (char*)"北京";
 
 	char** arrive_cities = new char* [2];
-	arrive_cities[0] = (char*)"南京";
-	arrive_cities[1] = (char*)"北京";
+	arrive_cities[0] = (char*)"北京";
+	arrive_cities[1] = (char*)"哈尔滨";
 
 	int city_num = 2;
 
@@ -49,7 +48,7 @@ int main()
 
 	char* remark = (char*)"我要非常舒适的体验";
 
-	int* distances = new int[2]{950,1050};
+	int* distances = new int[2]{1800,1200};
 
 	UserRequirement user_requirement
 	(

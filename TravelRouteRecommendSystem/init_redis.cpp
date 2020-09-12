@@ -33,6 +33,10 @@ int InitRedis::getPriorityLevel(string key)
 	{
 		return redis_reply->integer;
 	}
+	else if (type != 6 && type == 1)
+	{
+		return atoi(redis_reply->str);
+	}
 	else
 	{
 		return -1;//»ñÈ¡´íÎó

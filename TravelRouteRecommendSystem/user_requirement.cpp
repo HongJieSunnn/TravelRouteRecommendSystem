@@ -81,28 +81,54 @@ PretreatStatue UserRequirement::pretreatTime(UserRequirementAfterPretreat& requi
 
 PretreatStatue UserRequirement::timeToMyTimeAndIntoRequirementAfterPreTreat(UserRequirementAfterPretreat& requirement)
 {
-	if ((this->start_time == "" || this->start_time == nullptr) && (this->arrive_time == "" || this->start_time == nullptr))//时间都没给
+	if ((this->start_time == nullptr) && (this->arrive_time == nullptr))//时间都没给
 	{
 		return PRETREAT_TIME_NO_BOTH_TIME;
 	}
 
-	if (this->start_time != "" && this->start_time != nullptr)//若出发时间不为空
+	if (this->start_time != nullptr)//若出发时间不为空
 	{
-		requirement.start_time = MyTime::stringToMyTime(this->start_time, YYYY_MM_DD_HH_MM);
+		for (int i = 0; i < city_num; i++)
+		{
+			if (start_time[i] != "")
+			{
+				requirement.start_time[i] = MyTime::stringToMyTime(this->start_time[i], YYYY_MM_DD_HH_MM);
+			}
+			else
+			{
+				requirement.start_time[i] = MyTime();
+			}
+		}
 	}
 	else
 	{
-		requirement.start_time = MyTime();
+		for (int i = 0; i < city_num; i++)
+		{
+			requirement.start_time[i] = MyTime();
+		}
 		return PRETREAT_TIME_NO_START_TIME;
 	}
 
-	if (this->arrive_time != "" && this->arrive_time != nullptr)//若到达时间不为空
+	if (this->arrive_time != nullptr)//若到达时间不为空
 	{
-		requirement.arrive_time = MyTime::stringToMyTime(this->arrive_time, YYYY_MM_DD_HH_MM);
+		for (int i = 0; i < city_num; i++)
+		{
+			if (arrive_time[i] != "")
+			{
+				requirement.arrive_time[i] = MyTime::stringToMyTime(this->arrive_time[i], YYYY_MM_DD_HH_MM);
+			}
+			else
+			{
+				requirement.arrive_time[i] = MyTime();
+			}
+		}
 	}
 	else
 	{
-		requirement.arrive_time = MyTime();
+		for (int i = 0; i < city_num; i++)
+		{
+			requirement.arrive_time[i] = MyTime();
+		}
 		return PRETREAT_TIME_NO_ARRIVLE_TIME;
 	}
 
@@ -115,7 +141,6 @@ PretreatStatue UserRequirement::dealPretreatTimeStatue(PretreatStatue statue_cod
 	{
 	case PRETREAT_TIME_NO_BOTH_TIME:
 	case PRETREAT_TIME_NO_START_TIME:
-		RouteResult::error = (char*)"出发时间空错误";
 		return PRETREAT_TIME_FAILED;
 		break;
 	case PRETREAT_TIME_NO_ARRIVLE_TIME:
@@ -220,7 +245,7 @@ PretreatStatue UserRequirement::pretreatVehicleExperience(UserRequirementAfterPr
 		}
 		else if (this->vehicle_type[i] == "火车")
 		{
-			requirement.vehicleType[i] = HSRC;
+			requirement.vehicleType[i] = UserRequirementNamespace::HSRC;
 		}
 		else if (this->vehicle_type[i] == "航空")
 		{
@@ -371,7 +396,11 @@ PretreatStatue UserRequirement::pretreatRemark(UserRequirementAfterPretreat& req
 			requirement.travelType = URGENT_TO_SCHOOL_TRIP;
 		}
 		else
+		{
+			requirement.remark = "出游不能变为紧急 所以我们无法根据您的备注来推荐哦";
 			return REMARK_CANNOT_CHANGE_TRIP_STATUE_TO_URGENT;//出游不能变成紧急 要不就选紧急出行 出游备注紧急 则直接返回 并且提示用户出行不能变为紧急 所以我们无法根据您的备注来推荐哦
+		}
+			
 		remark_needs_status_code.push_back(REMARK_CHANGE_TRIP_STATUE_TO_URGENT);
 	}
 
@@ -383,7 +412,11 @@ PretreatStatue UserRequirement::pretreatRemark(UserRequirementAfterPretreat& req
 			remark_needs_status_code.push_back(REMARK_FAMILIIES_INCLUDE_THE_OLD_OR_CHILD);
 		}
 		else
+		{
+			requirement.remark = "下次和家人一起出游时再添加这些备注吧~";
 			return REMARK_FAMLIIES_INCLUDE_THE_OLD_OR_CHILD_BUT_NOT_WITH_FAMILIES;//和出游不能变成紧急类似 直接忽略备注 并且返回提示
+		}
+			
 	}
 
 	if (remark_str.find("便宜") != string::npos||
@@ -398,7 +431,11 @@ PretreatStatue UserRequirement::pretreatRemark(UserRequirementAfterPretreat& req
 	}
 
 	if (remark_needs_status_code.empty())
+	{
+		requirement.remark = "对不起 暂时无法理解您的备注哦";
 		return NO_MATCH_REMARK;
+	}
+		
 
 	PretreatRemarkNeeds pretreat_remark_needs_status = (PretreatRemarkNeeds)toDealPretreatRemarkNeeds(requirement);
 	switch (pretreat_remark_needs_status)
@@ -425,18 +462,12 @@ PretreatStatue UserRequirement::dealPretreatRemarkStatue(PretreatStatue statue_c
 		return PRETREAT_REMARK_SUCCEED;
 		break;
 	case NO_MATCH_REMARK:
-		//TODO 后面肯定要改的 实际上就是把要返回给后端的结果的备注添加上一些信息
-		RouteResult::remark = (char*)"对不起 暂时无法理解您的备注哦";
 		return PRETREAT_REMARK_FAILED;
 		break;
 	case REMARK_CANNOT_CHANGE_TRIP_STATUE_TO_URGENT:
-		//TODO 后面肯定要改的 实际上就是把要返回给后端的结果的备注添加上一些信息
-		RouteResult::remark = (char*)"出游不能变为紧急 所以我们无法根据您的备注来推荐哦";
 		return PRETREAT_REMARK_FAILED;
 		break;
 	case REMARK_FAMLIIES_INCLUDE_THE_OLD_OR_CHILD_BUT_NOT_WITH_FAMILIES:
-		//TODO 后面肯定要改的 实际上就是把要返回给后端的结果的备注添加上一些信息
-		RouteResult::remark = (char*)"下次和家人一起出游时再添加这些备注吧~";
 		return PRETREAT_REMARK_FAILED;
 		break;
 	}
@@ -468,7 +499,7 @@ PretreatStatue UserRequirement::toDealPretreatRemarkNeeds(UserRequirementAfterPr
 			}
 			else
 			{
-				RouteResult::remark = (char*)"对不起，我们无法判断您究竟是要贵的还是便宜的价格";
+				requirement.remark = (char*)"对不起，我们无法判断您究竟是要贵的还是便宜的价格";
 				return PRETREAT_REMARK_NEEDS_ERROR;
 			}
 			break;
@@ -480,7 +511,7 @@ PretreatStatue UserRequirement::toDealPretreatRemarkNeeds(UserRequirementAfterPr
 			}
 			else
 			{
-				RouteResult::remark = (char*)"对不起，我们无法判断您究竟是要贵的还是便宜的价格";
+				requirement.remark = (char*)"对不起，我们无法判断您究竟是要贵的还是便宜的价格";
 				return PRETREAT_REMARK_NEEDS_ERROR;
 			}
 			break;

@@ -88,23 +88,34 @@ namespace
 }
 using namespace GetRouteNameSpace;
 
-
-GetRouteNameSpace::CreateGraphStatue GetRoute::createGraph()
+GetRouteResultStatue GetRoute::getRouteResults(RouteResult*& route_result)
 {
-	int cities_num = requirement.start_cities.size();
-	
-	this->graph = Graph<string, vector<vector<Vehicle*>>>(cities_num + 1, cities_num);
-	if (graph.createGraph(this->vertex_datas, edges, weights) != OperateGraphStatue::CREATE_GRAPH_SUCCEED)
-	{
-		return CreateGraphStatue::CREATE_GRAPH_FAILED;
-	}
-
 	if (!sortWeights())
 	{
-		return CreateGraphStatue::CREATE_GRAPH_FAILED;
+		return GetRouteResultStatue::SORT_WEIGHTS_FAILED;
 	}
-
-	return CreateGraphStatue::CREATE_GRAPH_SUCCEED;
+	int how_many_city_nums = this->weights.size();//城市组数
+	for (int i = 0; i < how_many_city_nums; i++)
+	{
+		if (weights[i].size() == 0)
+		{
+			string error = "没有可推荐线路(其中第";
+			throw std::exception(error.append(to_string(i+1)).append("段路没有结果)").c_str());
+		}
+	}
+	route_result = new RouteResult[weights.size()];
+	for (int i = 0; i < weights.size(); i++)
+	{
+		route_result[i].route = new Vehicle * *[weights[i].size()];
+		for (int j = 0; j < weights[i].size(); j++)
+		{
+			route_result[i].route[j] = new Vehicle * [weights[i][j].size()];
+			for (int k = 0; k < weights[i][j].size(); k++)
+			{
+				route_result[i].route[j][k] = this->weights[i][j][k];
+			}
+		}
+	}
 }
 
 bool GetRoute::sortWeights()
@@ -482,33 +493,33 @@ unordered_map<string, string> GetRoute::getWhereSentenceKeyValue(int now_index)
 	unordered_map<string, string> where_sentence;
 	where_sentence.insert({ "start_city",requirement.start_cities[now_index] });
 	where_sentence.insert({ "arrival_city",requirement.arrive_cities[now_index] });
-	where_sentence.insert({ "start_time",requirement.start_time.myTimeToStringByInt(HH_MM) });
-	if (requirement.arrive_time.format != 0&& requirement.vehicleType[now_index] != UserRequirementNamespace::TRANS&& requirement.vehicleType[now_index] != UserRequirementNamespace::FIX_TRANS)
+	where_sentence.insert({ "start_time",requirement.start_time[now_index].myTimeToStringByInt(HH_MM) });
+	if (requirement.arrive_time[now_index].format != 0 && requirement.vehicleType[now_index] != UserRequirementNamespace::TRANS && requirement.vehicleType[now_index] != UserRequirementNamespace::FIX_TRANS)
 	{
-		if (requirement.start_time.day < requirement.arrive_time.day)
+		if (requirement.start_time[now_index].day < requirement.arrive_time[now_index].day)
 		{
-			requirement.arrive_time.hour += (requirement.arrive_time.day - requirement.start_time.day) * 24;
+			requirement.arrive_time[now_index].hour += (requirement.arrive_time[now_index].day - requirement.start_time[now_index].day) * 24;
 		}
-		where_sentence.insert({ "arrival_time",requirement.arrive_time.myTimeToStringByInt(HH_MM) });
+		where_sentence.insert({ "arrival_time",requirement.arrive_time[now_index].myTimeToStringByInt(HH_MM) });
 	}
 	if (requirement.transitType[now_index] == UserRequirementNamespace::TRANS)
 	{
-		where_sentence.insert({ "mileage",to_string(requirement.distances[now_index]*0.65) });//火车
+		where_sentence.insert({ "mileage",to_string(requirement.distances[now_index] * 0.65) });//火车
 		string repitive_train_id = "train_id NOT IN (SELECT train_id FROM ";
 		where_sentence.insert({ "train_id",repitive_train_id.
 			append(getTableName(requirement.start_cities[now_index],UserRequirementNamespace::HSRC)).append(" WHERE arrival_city=").
 			append(InitMySQL::toSQLString(requirement.arrive_cities[now_index]).append(")")) });
 
-		int minute_of_all = requirement.distances[now_index] / 800.0*60.0*0.65;
+		int minute_of_all = requirement.distances[now_index] / 800.0 * 60.0 * 0.65;
 		int hour = minute_of_all / 60;
 		int minute = minute_of_all % 60;
-		string cost_time=to_string(hour).append("小时").append(to_string(minute)).append("分钟");
+		string cost_time = to_string(hour).append("小时").append(to_string(minute)).append("分钟");
 		where_sentence.insert({ "cost_time",cost_time });
 	}
 	return where_sentence;
 }
 
-unordered_map<string, string> GetRoute::getWhereSentenceKeyValueOfSecondRouteOfTrans(int now_index,Vehicle* vehicle, UserRequirementNamespace::VehicleTypeEnum vehicle_type)
+unordered_map<string, string> GetRoute::getWhereSentenceKeyValueOfSecondRouteOfTrans(int now_index, Vehicle* vehicle, UserRequirementNamespace::VehicleTypeEnum vehicle_type)
 {
 	unordered_map<string, string> where_sentence;
 	if (this->requirement.transitType[now_index] == UserRequirementNamespace::FIX_TRANS)
@@ -522,13 +533,13 @@ unordered_map<string, string> GetRoute::getWhereSentenceKeyValueOfSecondRouteOfT
 
 	where_sentence.insert({ "arrival_city",requirement.arrive_cities[now_index] });
 	where_sentence.insert({ "start_time",vehicle->get_arrival_time() });
-	if (requirement.arrive_time.format != 0)
+	if (requirement.arrive_time[now_index].format != 0)
 	{
-		if (requirement.start_time.day < requirement.arrive_time.day)
+		if (requirement.start_time[now_index].day < requirement.arrive_time[now_index].day)
 		{
-			requirement.arrive_time.hour += (requirement.arrive_time.day - requirement.start_time.day) * 24;
+			requirement.arrive_time[now_index].hour += (requirement.arrive_time[now_index].day - requirement.start_time[now_index].day) * 24;
 		}
-		where_sentence.insert({ "arrival_time",requirement.arrive_time.myTimeToStringByInt(HH_MM) });
+		where_sentence.insert({ "arrival_time",requirement.arrive_time[now_index].myTimeToStringByInt(HH_MM) });
 	}
 	where_sentence.insert({ "mileage",to_string(requirement.distances[now_index] * 0.65) });//火车
 

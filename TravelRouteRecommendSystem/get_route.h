@@ -28,6 +28,13 @@ using std::to_string;
 
 namespace GetRouteNameSpace
 {
+	enum class GetRouteResultStatue
+	{
+		GET_ROUTE_RESULT_FAILED,
+		GET_ROUTE_RESULT_SUCCEED,
+		SORT_WEIGHTS_FAILED
+	};
+
 	/*
 		创建图时的状态枚举
 	*/
@@ -223,47 +230,15 @@ private:
 	vector<pair<VertexData<string>, VertexData<string>>> edges;
 	vector<vector<vector<Vehicle*>>> weights;
 	std::mutex mu;
-public:
-	GetRoute(UserRequirement requirement)
-	{
-		//TODO:后续封装dll时可以把UserRequirement requirement弄成一个全局变量
-		this->requirement = requirement.pretreatUserRequirement();
-
-		int cities_num = this->requirement.start_cities.size();
-		vertex_datas = vector<string>(cities_num + 1);
-		edges = vector<pair<VertexData<string>, VertexData<string>>>(cities_num);
-		weights.resize(cities_num);
-	}
-
-	GetRoute(UserRequirementAfterPretreat requirement)
-	{
-		//TODO:后续封装dll时可以把UserRequirement requirement弄成一个全局变量
-		this->requirement = requirement;
-		int cities_num = requirement.start_cities.size();
-		vertex_datas = vector<string>(cities_num + 1);
-		edges = vector<pair<VertexData<string>, VertexData<string>>>(cities_num);
-		weights.resize(cities_num);
-	}
-	~GetRoute()
-	{
-
-	}
-
-	/*
-		创建图并且把边排序
-	* 
-	*/
-	GetRouteNameSpace::CreateGraphStatue createGraph();
-
 	/*
 		给weight排序
-	* 
+	*
 	*/
 	bool sortWeights();
 
 	/*
 		getVechileInfor 通过预处理后的需求获取交通工具(也就是获取路线)
-	* 
+	*
 	*/
 	GetRouteNameSpace::GetVehicleStatue getVechileInfor();
 
@@ -296,7 +271,7 @@ public:
 
 	/*
 		获取任意中转的交通工具信息
-	* 
+	*
 	*/
 	GetRouteNameSpace::GetAllTransitVehicleStatue getAllTransitVehicleInfor(int now_index);
 
@@ -311,7 +286,7 @@ public:
 		适用于 all_vehicle的时候
 	*
 	*/
-	unordered_map<string, string> getWhereSentenceKeyValueOfSecondRouteOfTrans(int now_index, Vehicle* vehicle,UserRequirementNamespace::VehicleTypeEnum vehicle_type);
+	unordered_map<string, string> getWhereSentenceKeyValueOfSecondRouteOfTrans(int now_index, Vehicle* vehicle, UserRequirementNamespace::VehicleTypeEnum vehicle_type);
 
 	/*
 		获取table_name(根据start_city)
@@ -334,7 +309,7 @@ public:
 
 	/*
 		适用于all__transit且all_vehicle时获取order信息
-	* 
+	*
 	*/
 	string getOrderSentence(int now_index, UserRequirementNamespace::VehicleTypeEnum);
 
@@ -353,7 +328,7 @@ public:
 		获得转车的第二段路线 适用于 all_vehicle的时候
 	*
 	*/
-	string getSQLQuerySecondRouteOfTrans(int now_index, vector<string> columns, string table_name, unordered_map<string, string> where_sentence,UserRequirementNamespace::VehicleTypeEnum vehicle_type);
+	string getSQLQuerySecondRouteOfTrans(int now_index, vector<string> columns, string table_name, unordered_map<string, string> where_sentence, UserRequirementNamespace::VehicleTypeEnum vehicle_type);
 
 	/*
 		获取SQL语句数据传入getXxxxVehicleInfor方法中
@@ -363,15 +338,46 @@ public:
 
 	/*
 		返回weighs 因为all_transit要新建两个对象 从而也就是往对应的weights中写 我直接get写好的 然后拼一起就好了
-	* 
+	*
 	*/
 	vector<vector<vector<Vehicle*>>> getWeights();
 
 	/*
 		获取两个城市间的最大里程 从而确定转车的第一段的中转站 里程要比这个小
-	* 
+	*
 	*/
-	string getMaxMileage(string start_city,string arrival_city);
+	string getMaxMileage(string start_city, string arrival_city);
+public:
+	GetRoute(UserRequirement requirement)
+	{
+		//TODO:后续封装dll时可以把UserRequirement requirement弄成一个全局变量
+		this->requirement = requirement.pretreatUserRequirement();
+
+		int cities_num = this->requirement.start_cities.size();
+		vertex_datas = vector<string>(cities_num + 1);
+		edges = vector<pair<VertexData<string>, VertexData<string>>>(cities_num);
+		weights.resize(cities_num);
+	}
+
+	GetRoute(UserRequirementAfterPretreat requirement)
+	{
+		//TODO:后续封装dll时可以把UserRequirement requirement弄成一个全局变量
+		this->requirement = requirement;
+		int cities_num = requirement.start_cities.size();
+		vertex_datas = vector<string>(cities_num + 1);
+		edges = vector<pair<VertexData<string>, VertexData<string>>>(cities_num);
+		weights.resize(cities_num);
+	}
+	~GetRoute()
+	{
+
+	}
+
+	/*
+	返回线路结果数组
+	* route_result:RouteResult数组的引用 用来“返回”RouteResult数组
+	*/
+	GetRouteResultStatue getRouteResults(RouteResult*& route_result);
 };
 
 #endif // !GETROUTE_H

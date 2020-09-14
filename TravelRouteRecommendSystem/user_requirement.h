@@ -179,8 +179,8 @@ struct UserRequirementAfterPretreat
 {
 	vector<string> start_cities;
 	vector<string> arrive_cities;
-	MyTime start_time;
-	MyTime arrive_time;
+	vector<MyTime> start_time;
+	vector<MyTime> arrive_time;
 	TravelType travelType;
 	TimeType timeType;
 	PriceType priceType;
@@ -188,6 +188,21 @@ struct UserRequirementAfterPretreat
 	vector<VehicleType> vehicleType;
 	vector <TransitType> transitType;
 	vector<int> distances;
+	string remark;
+};
+class UserRequirementFromCSharp
+{
+public:
+	char** start_cities;
+	char** arrive_cities;
+	int city_num;
+	char** start_time;
+	char** arrive_time;
+	char* travel_type;
+	char** vehicle_type;
+	char** transit_type;
+	int* distances;
+	char* remark;
 };
 
 /*
@@ -221,8 +236,8 @@ class UserRequirement
 	char** start_cities;
 	char** arrive_cities;
 	int city_num;
-	char* start_time;
-	char* arrive_time;
+	char** start_time;
+	char** arrive_time;
 	char* travel_type;
 	char** vehicle_type;
 	char** transit_type;
@@ -230,10 +245,10 @@ class UserRequirement
 	char* remark;
 
 public:
-	UserRequirement() 
+	UserRequirement()
 	{
 	};
-	UserRequirement(char** start_cities, char** arrive_cities, int city_num, char* start_time, char* arrive_time, char** vehicle_type, char* travel_type, char** transit_type, int* distances, char* remark) :
+	UserRequirement(char** start_cities, char** arrive_cities, int city_num, char** start_time, char** arrive_time, char** vehicle_type, char* travel_type, char** transit_type, int* distances, char* remark) :
 		start_cities(start_cities),
 		arrive_cities(arrive_cities),
 		city_num(city_num),
@@ -244,6 +259,20 @@ public:
 		transit_type(transit_type),
 		distances(distances),
 		remark(remark)
+	{
+	}
+
+	UserRequirement(UserRequirementFromCSharp requirement) :
+		start_cities(requirement.start_cities),
+		arrive_cities(requirement.arrive_cities),
+		city_num(requirement.city_num),
+		start_time(requirement.start_time),
+		arrive_time(requirement.arrive_time),
+		vehicle_type(requirement.vehicle_type),
+		travel_type(requirement.travel_type),
+		transit_type(requirement.transit_type),
+		distances(requirement.distances),
+		remark(requirement.remark)
 	{
 	}
 	/*

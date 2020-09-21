@@ -60,6 +60,9 @@
     <ClInclude Include="graph.h">
       <Filter>头文件\DataStruct</Filter>
     </ClInclude>
+    <ClInclude Include="error.h">
+      <Filter>头文件\DataStruct</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="init_mysql.cpp">

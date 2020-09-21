@@ -22,58 +22,63 @@ int main()
 	initRedis();//初始化redis
 
 	//新建一个UserRequirement对象测试一下
-	char** start_cities = new char* [2];
-	start_cities[0] = (char*)"福州";
-	start_cities[1] = (char*)"北京";
+	vector<string> start_cities(2);
+	start_cities[0] = "福州";
+	start_cities[1] = "北京";
 
-	char** arrive_cities = new char* [2];
+	vector<string> arrive_cities(2);
 	arrive_cities[0] = (char*)"北京";
 	arrive_cities[1] = (char*)"哈尔滨";
 
 	int city_num = 2;
 
-	char* start_time = (char*)"2020-08-08 00:00";
+	vector<string> start_time(2);
+	start_time[0] = "2020-08-08 00:00";
 
-	char* arrive_time = nullptr;
+	vector<string> arrive_time;
 
-	char** vehicle_type=new char*[2];
+	vector<string> vehicle_type(2);
 	vehicle_type[0] = (char*)"任意";
 	vehicle_type[1] = (char*)"火车";
 
-	char* travel_type = (char*)"商务出差";
+	string travel_type = "商务出差";
 
-	char** transit_type=new char*[2];
-	transit_type[0] = (char*)"任意";
-	transit_type[1] = (char*)"直达";
+	vector<string> transit_type(2);
+	transit_type[0] = "任意";
+	transit_type[1] = "直达";
 
-	char* remark = (char*)"我要非常舒适的体验";
+	string remark = "我要非常舒适的体验";
 
-	int* distances = new int[2]{1800,1200};
+	vector<int> distances({ 1800,1200 });
 
-	UserRequirement user_requirement
-	(
-		start_cities,
-		arrive_cities,
-		city_num,
-		start_time,
-		arrive_time,
-		vehicle_type,
-		travel_type,
-		transit_type,
-		distances,
-		remark
-	);
+	
 
-	GetRoute get_route(user_requirement);
-	get_route.getVechileInfor();
-	get_route.createGraph();
+	RouteResult* route_result;
+	try
+	{
+		UserRequirement user_requirement
+		(
+			start_cities,
+			arrive_cities,
+			city_num,
+			start_time,
+			arrive_time,
+			vehicle_type,
+			travel_type,
+			transit_type,
+			distances,
+			remark
+		);
+		UserRequirementAfterPretreat temp = user_requirement.pretreatUserRequirement();
+		GetRoute get_route(temp);
+		get_route.getRouteResults(route_result);
+	}
+	catch (const std::exception& exc)
+	{
+		cout << exc.what();
+	}
+	
 	cout << "ok";
-
-	delete[] start_cities;
-	delete[] arrive_cities;
-	delete[] vehicle_type;
-	delete[] transit_type;
-	delete[] distances;
 }
 
 void initDB()

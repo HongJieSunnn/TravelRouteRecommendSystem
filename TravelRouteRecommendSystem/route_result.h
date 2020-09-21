@@ -1,15 +1,10 @@
 #ifndef ROUTERESULT_H
 #define ROUTERESULT_H
-#include<vector>
-#include<string>
-#include"vehicle.h"
-using std::vector;
-using std::string;
-
+#include"route.h"
 class RouteResult
 {
 public:
-	Vehicle*** route;
+	Route** route;
 };
 
 #endif // !ROUTERESULT_H

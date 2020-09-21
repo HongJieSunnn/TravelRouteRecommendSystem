@@ -116,4 +116,3 @@ OperateGraphStatue Graph<T, WeightType>::createGraph(vector<VertexData<T>> verte
 
 	return CREATE_GRAPH_SUCCEED;
 }
-

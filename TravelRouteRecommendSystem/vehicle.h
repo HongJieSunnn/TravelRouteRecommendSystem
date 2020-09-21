@@ -11,6 +11,7 @@ namespace
 	const string AIRPLANE_TYPE = "AIRPLANE_TYPE";
 	const string HSRC_TYPE = "HSRC_TYPE";
 }
+
 /*	
 	交通工具类 基类
 *vehicle_type:交通工具类型 当fix类型时 Vechile会动态多态 所以用这个来判断究竟是哪个子类
@@ -104,6 +105,10 @@ public:
 	{
 		return "";
 	};
+	virtual string getMileage()
+	{
+		return "";
+	}
 };
 
 class AirPlane:public Vehicle
@@ -248,6 +253,7 @@ public:
 	string get_one_class_seat_price();
 	string get_business_seat_price();
 	string get_cost_time();
+	string getMileage();
 };
 
 inline string AirPlane::get_vehicle_id()
@@ -355,5 +361,8 @@ inline string HSRC::get_cost_time()
 {
 	return this->cost_time;
 }
-
+inline string HSRC::getMileage()
+{
+	return this->mileage;
+}
 #endif // !VEHICLE_H

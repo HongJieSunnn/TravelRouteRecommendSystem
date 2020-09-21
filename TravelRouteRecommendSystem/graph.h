@@ -8,13 +8,16 @@
 #include<queue>
 #include<algorithm>
 #include<queue>
+#include<map>
 #include"vehicle.h"
+#include"route_result.h"
 using std::vector;
 using std::unordered_map;
 using std::pair;
 using std::unique_ptr;
 using std::queue;
 using std::priority_queue;
+using std::map;
 using std::max;
 using std::min;
 using std::sort;

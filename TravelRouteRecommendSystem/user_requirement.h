@@ -2,6 +2,7 @@
 #define USERREQUIREMENT_H
 #include"my_time.h"
 #include"route_result.h"
+#include"my_exception.h"
 #include<vector>
 #include<string>
 using std::vector;
@@ -103,8 +104,8 @@ namespace UserRequirementNamespace
 		PRETREAT_TRAVELTYPE_SUCCEED,
 		PRETREAT_VEHICLE_EXPERIENCE_FAILED,
 		PRETREAT_VEHICLE_EXPERIENCE_SUCCEED,
-		PRETREAT_transit_TYPE_FAILED_FINALL,
-		PRETREAT_transit_TYPE_SUCCEED_FINALL,
+		PRETREAT_TRANSIT_TYPE_FAILED_FINALL,
+		PRETREAT_TRANSIT_TYPE_SUCCEED_FINALL,
 		PRETREAT_DISTANCES_ERROR_FINALL,
 		PRETREAT_DISTANCES_SUCCEED_FINALL,
 	};
@@ -148,10 +149,10 @@ namespace UserRequirementNamespace
 	};
 	enum PretreatTransitTypeStatus
 	{
-		PRETREAT_transit_TYPE_ERROR,
-		PRETREAT_transit_TYPE_SUCCEED,
-		PRETREAT_transit_TYPE_ERROR_TYPE,
-		PRETREAT_transit_TYPE_ERROR_FIX_ONLY_WHEN_VEHICLE_ALL,
+		PRETREAT_TRANSIT_TYPE_ERROR,
+		PRETREAT_TRANSIT_TYPE_SUCCEED,
+		PRETREAT_TRANSIT_TYPE_ERROR_TYPE,
+		PRETREAT_TRANSIT_TYPE_ERROR_FIX_ONLY_WHEN_VEHICLE_ALL,
 	};
 	enum PretreatDistancesStatus
 	{
@@ -179,8 +180,8 @@ struct UserRequirementAfterPretreat
 {
 	vector<string> start_cities;
 	vector<string> arrive_cities;
-	MyTime start_time;
-	MyTime arrive_time;
+	vector<MyTime> start_time;
+	vector<MyTime> arrive_time;
 	TravelType travelType;
 	TimeType timeType;
 	PriceType priceType;
@@ -188,6 +189,21 @@ struct UserRequirementAfterPretreat
 	vector<VehicleType> vehicleType;
 	vector <TransitType> transitType;
 	vector<int> distances;
+	string remark;
+};
+class UserRequirementFromCSharp
+{
+public:
+	char* start_cities;
+	char* arrive_cities;
+	int city_num;
+	char* start_time;
+	char* arrive_time;
+	char* travel_type;
+	char* vehicle_type;
+	char* transit_type;
+	int distances;
+	char* remark;
 };
 
 /*
@@ -218,22 +234,33 @@ struct UserRequirementAfterPretreat
 //即使用户有些需求没给出 但是后端给C++时 就要把没给的用默认补全 因为C#操作方便些
 class UserRequirement
 {
-	char** start_cities;
-	char** arrive_cities;
+	vector<string> start_cities;
+	vector<string> arrive_cities;
 	int city_num;
-	char* start_time;
-	char* arrive_time;
-	char* travel_type;
-	char** vehicle_type;
-	char** transit_type;
-	int* distances;
-	char* remark;
+	vector<string> start_time;
+	vector<string> arrive_time;
+	string travel_type;
+	vector<string> vehicle_type;
+	vector<string> transit_type;
+	vector<int> distances;
+	string remark;
 
 public:
-	UserRequirement() 
+	UserRequirement()
 	{
 	};
-	UserRequirement(char** start_cities, char** arrive_cities, int city_num, char* start_time, char* arrive_time, char** vehicle_type, char* travel_type, char** transit_type, int* distances, char* remark) :
+
+	UserRequirement(vector<string> start_cities,
+		vector<string> arrive_cities,
+		int city_num,
+		vector<string> start_time,
+		vector<string> arrive_time,
+		vector<string> vehicle_type,
+		string travel_type,
+		vector<string> transit_type,
+		vector<int> distances,
+		string remark) 
+		:
 		start_cities(start_cities),
 		arrive_cities(arrive_cities),
 		city_num(city_num),

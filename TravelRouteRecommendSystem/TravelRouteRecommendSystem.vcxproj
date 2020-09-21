@@ -32,6 +32,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="change_character_set.h" />
+    <ClInclude Include="error.h" />
     <ClInclude Include="get_route.h" />
     <ClInclude Include="graph.h" />
     <ClInclude Include="init_mysql.h" />

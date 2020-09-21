@@ -85,26 +85,60 @@ namespace
 			);
 		}
 	}
+
+	
 }
 using namespace GetRouteNameSpace;
 
-
-GetRouteNameSpace::CreateGraphStatue GetRoute::createGraph()
+GetRouteResultStatue GetRoute::getRouteResults(RouteResult*& route_result)
 {
-	int cities_num = requirement.start_cities.size();
-	
-	this->graph = Graph<string, vector<vector<Vehicle*>>>(cities_num + 1, cities_num);
-	if (graph.createGraph(this->vertex_datas, edges, weights) != OperateGraphStatue::CREATE_GRAPH_SUCCEED)
+	getVechileInfor();
+	if (!sortWeights())
 	{
-		return CreateGraphStatue::CREATE_GRAPH_FAILED;
+		return GetRouteResultStatue::SORT_WEIGHTS_FAILED;
 	}
+	int how_many_city_nums = this->weights.size();//城市组数
+	for (int i = 0; i < how_many_city_nums; i++)
+	{
+		if (weights[i].size() == 0)
+		{
+			string error = "没有可推荐线路(其中第";
+			throw MyException(3, "NO_RECOMMENDATION_ROUTES", error.append(to_string(i + 1)).append("段路没有结果)").c_str());
+		}
+	}
+	route_result = new RouteResult[weights.size()];
+	for (int i = 0; i < weights.size(); i++)
+	{
+		route_result[i].route = new Route*[weights[i].size()];
+		for (int j = 0; j < weights[i].size(); j++)
+		{
+			route_result[i].route[j] = new Route [weights[i][j].size()];
+			for (int k = 0; k < weights[i][j].size(); k++)
+			{
+				route_result[i].route[j][k]=vehicleToRoute(this->weights[i][j][k]);
+			}
+		}
+	}
+}
+
+GetRouteNameSpace::GetRouteResultStatue GetRoute::getRouteResultsOneGroup(RouteResult& route_result)
+{
+	getVechileInfor();
 
 	if (!sortWeights())
 	{
-		return CreateGraphStatue::CREATE_GRAPH_FAILED;
+		throw MyException(1, "SORT_WEIGHTS_FAILED", "按权排序线路时出错");
 	}
-
-	return CreateGraphStatue::CREATE_GRAPH_SUCCEED;
+	route_result.route = new Route*[this->weights[0].size()];
+	for (int i = 0; i < this->weights[0].size(); i++)
+	{
+		route_result.route[i] = new Route[this->weights[0][i].size()];
+		for (int j = 0; j < this->weights[0][i].size(); j++)
+		{
+			route_result.route[i][j] = vehicleToRoute(this->weights[0][i][j]);
+		}
+	}
+	return GetRouteResultStatue::GET_ROUTE_RESULT_SUCCEED;
 }
 
 bool GetRoute::sortWeights()
@@ -143,39 +177,76 @@ GetRouteNameSpace::GetVehicleStatue GetRoute::getVechileInfor()
 
 	for (int i = 0; i < cities_num; i++)
 	{
-		vertex_datas[i]=(this->requirement.start_cities[i]);//开始城市放入图的点中
-		vertex_datas[i+1]=(this->requirement.arrive_cities[i]);//到达城市放入图的点中
-		edges[i]={ this->requirement.start_cities[i],this->requirement.arrive_cities[i] };//添加边
 		switch (this->requirement.transitType[i])
 		{
-		case UserRequirementNamespace::DIRECT:
-			if (getDirectVehicleInfor(i, getSQLQueryVector(i)) != GetDirectVehicleStatue::GET_DIRECT_VEHICLE_SUCCEED)
+			case UserRequirementNamespace::DIRECT:
 			{
-				return GetVehicleStatue::GET_DIRECT_VEHICLE_FAILED;
+				auto statue = getDirectVehicleInfor(i, getSQLQueryVector(i));
+				switch (statue)
+				{
+				case GetRouteNameSpace::GetDirectVehicleStatue::GET_DIRECT_VEHICLE_FAILED:
+					throw MyException(1, "GET_DIRECT_VEHICLE_FAILED", "未知错误导致获取直达路线失败");
+				case GetRouteNameSpace::GetDirectVehicleStatue::GET_DIRECT_VEHICLE_SUCCEED:
+					break;
+				case GetRouteNameSpace::GetDirectVehicleStatue::SELECT_RESULT_EMPTY:
+					throw MyException(3, "SELECT_RESULT_EMPTY", "没有符合相应需求的路线，建议扩大需求或者更改其它城市");
+				case GetRouteNameSpace::GetDirectVehicleStatue::GET_RES_FAILED:
+					throw MyException(3, "GET_RES_FAILED", "SQL查询错误，可能是不存在该出发城市的表，请换一个城市");
+				}
+				break;
 			}
-			break;
-		case UserRequirementNamespace::TRANS:
-			if (getTransitVehicleInfor(i, getSQLQueryVector(i)) != GetTransitVehicleStatue::GET_TRANSIT_VEHICLE_SUCCEED)
+			case UserRequirementNamespace::TRANS:
 			{
-				return GetVehicleStatue::GET_TRANSIT_VEHICLE_FAILED;
+				auto statue = getTransitVehicleInfor(i, getSQLQueryVector(i));
+				switch (statue)
+				{
+				case GetRouteNameSpace::GetTransitVehicleStatue::GET_TRANSIT_VEHICLE_FAILED:
+					throw MyException(1, "GET_TRANSIT_VEHICLE_FAILED", "未知错误导致获取中转路线失败");
+				case GetRouteNameSpace::GetTransitVehicleStatue::GET_TRANSIT_VEHICLE_SUCCEED:
+					break;
+				case GetRouteNameSpace::GetTransitVehicleStatue::SELECT_RESULT_NO_FIRST_ROUTE:
+					throw MyException(3, "SELECT_RESULT_NO_FIRST_ROUTE", "没有符合相应需求的中转线路的前半段路线，建议扩大需求或者更改其它城市");
+				case GetRouteNameSpace::GetTransitVehicleStatue::GET_RES_FAILED:
+					throw MyException(3, "GET_RES_FAILED", "SQL查询错误，可能是不存在该出发城市的表，请换一个城市");
+				}
+				break;
 			}
-			break;
-		case UserRequirementNamespace::FIX_TRANS:
-			if (getFixVehicleInfor(i, getSQLQueryVector(i)) != GetFixVehicleStatue::GET_FIX_VEHICLE_SUCCEED)
+			case UserRequirementNamespace::FIX_TRANS:
 			{
-				return GetVehicleStatue::GET_FIX_VEHICLE_FAILED;
+				auto statue = getFixVehicleInfor(i, getSQLQueryVector(i));
+				switch (statue)
+				{
+				case GetRouteNameSpace::GetFixVehicleStatue::GET_FIX_VEHICLE_FAILED:
+					throw MyException(1, "GET_FIX_VEHICLE_FAILED", "未知错误导致获取混合中转路线失败");
+				case GetRouteNameSpace::GetFixVehicleStatue::GET_FIX_VEHICLE_SUCCEED:
+					break;
+				case GetRouteNameSpace::GetFixVehicleStatue::SELECT_RESULT_NO_FIRST_ROUTE:
+					throw MyException(3, "SELECT_RESULT_NO_FIRST_ROUTE", "没有符合相应需求的中转线路的前半段路线，建议扩大需求或者更改其它城市");
+				case GetRouteNameSpace::GetFixVehicleStatue::GET_RES_FAILED:
+					throw MyException(3, "GET_RES_FAILED", "SQL查询错误，可能是不存在该出发城市的表，请换一个城市");
+				default:
+					break;
+				}
+				break;
 			}
-			break;
-		case UserRequirementNamespace::ALL_TRANSIT:
-			if (getAllTransitVehicleInfor(i) != GetAllTransitVehicleStatue::GET_ALL_TRANSIT_VEHICLE_SUCCEED)
+			case UserRequirementNamespace::ALL_TRANSIT:
 			{
-				return GetVehicleStatue::GET_ALL_TRANSIT_VEHICLE_FAILED;
+				auto statue = getAllTransitVehicleInfor(i);
+				switch (statue)
+				{
+				case GetRouteNameSpace::GetAllTransitVehicleStatue::GET_ALL_TRANSIT_VEHICLE_FAILED:
+					throw MyException(1, "GET_ALL_TRANSIT_VEHICLE_FAILED", "未知错误导致获取任意推荐路线失败");
+				case GetRouteNameSpace::GetAllTransitVehicleStatue::GET_ALL_TRANSIT_VEHICLE_SUCCEED:
+					break;
+				case GetRouteNameSpace::GetAllTransitVehicleStatue::DIRECT_EMPTY:
+					break;
+				case GetRouteNameSpace::GetAllTransitVehicleStatue::TRANSIT_EMPTY:
+					break;
+				}
+				break;
 			}
-			break;
 		}
 	}
-
-
 	return GetVehicleStatue::GET_VEHICLE_SUCCEED;
 }
 
@@ -317,7 +388,7 @@ GetRouteNameSpace::GetTransitVehicleStatue GetRoute::getTransitVehicleInfor(int 
 			}
 			routes_one_station++;
 		}
-		weights[now_index].insert(weights[now_index].end(),temp_weights.begin(),temp_weights.end());
+		weights[now_index].insert(weights[now_index].end(), temp_weights.begin(), temp_weights.end());
 	}
 	return GetTransitVehicleStatue::GET_TRANSIT_VEHICLE_SUCCEED;
 }
@@ -336,19 +407,11 @@ GetRouteNameSpace::GetFixVehicleStatue GetRoute::getFixVehicleInfor(int now_inde
 	case GetRouteNameSpace::GetTransitVehicleStatue::SELECT_RESULT_NO_FIRST_ROUTE:
 		return GetFixVehicleStatue::SELECT_RESULT_NO_FIRST_ROUTE;
 		break;
-	case GetRouteNameSpace::GetTransitVehicleStatue::SELECT_RESULT_NO_SECOND_ROUTE:
-		return GetFixVehicleStatue::SELECT_RESULT_NO_SECOND_ROUTE;
-		break;
-	case GetRouteNameSpace::GetTransitVehicleStatue::GET_ONE_SECOND_ROUTE_INFOR_SUCCEED:
-		return GetFixVehicleStatue::GET_ONE_SECOND_ROUTE_INFOR_SUCCEED;
-		break;
-	case GetRouteNameSpace::GetTransitVehicleStatue::GET_TRANSIT_VEHICLE__GET_FAILED_SECOND_ROUTE_ERROR:
-		return GetFixVehicleStatue::GET_TRANSIT_VEHICLE__GET_FAILED_SECOND_ROUTE_ERROR;
-		break;
 	case GetRouteNameSpace::GetTransitVehicleStatue::GET_RES_FAILED:
 		return GetFixVehicleStatue::GET_RES_FAILED;
 		break;
 	}
+	return GetFixVehicleStatue::GET_FIX_VEHICLE_FAILED;
 }
 
 GetRouteNameSpace::GetTransitVehicleStatue GetRoute::getTransitVehicleInforSecondRoute(int now_index, vector<Vehicle*> first_route, vector<vector<Vehicle*>>& temp_weights)
@@ -482,33 +545,33 @@ unordered_map<string, string> GetRoute::getWhereSentenceKeyValue(int now_index)
 	unordered_map<string, string> where_sentence;
 	where_sentence.insert({ "start_city",requirement.start_cities[now_index] });
 	where_sentence.insert({ "arrival_city",requirement.arrive_cities[now_index] });
-	where_sentence.insert({ "start_time",requirement.start_time.myTimeToStringByInt(HH_MM) });
-	if (requirement.arrive_time.format != 0&& requirement.vehicleType[now_index] != UserRequirementNamespace::TRANS&& requirement.vehicleType[now_index] != UserRequirementNamespace::FIX_TRANS)
+	where_sentence.insert({ "start_time",requirement.start_time[now_index].myTimeToStringByInt(HH_MM) });
+	if (requirement.arrive_time[now_index].format != 0 && requirement.vehicleType[now_index] != UserRequirementNamespace::TRANS && requirement.vehicleType[now_index] != UserRequirementNamespace::FIX_TRANS)
 	{
-		if (requirement.start_time.day < requirement.arrive_time.day)
+		if (requirement.start_time[now_index].day < requirement.arrive_time[now_index].day)
 		{
-			requirement.arrive_time.hour += (requirement.arrive_time.day - requirement.start_time.day) * 24;
+			requirement.arrive_time[now_index].hour += (requirement.arrive_time[now_index].day - requirement.start_time[now_index].day) * 24;
 		}
-		where_sentence.insert({ "arrival_time",requirement.arrive_time.myTimeToStringByInt(HH_MM) });
+		where_sentence.insert({ "arrival_time",requirement.arrive_time[now_index].myTimeToStringByInt(HH_MM) });
 	}
 	if (requirement.transitType[now_index] == UserRequirementNamespace::TRANS)
 	{
-		where_sentence.insert({ "mileage",to_string(requirement.distances[now_index]*0.65) });//火车
+		where_sentence.insert({ "mileage",to_string(requirement.distances[now_index] * 0.65) });//火车
 		string repitive_train_id = "train_id NOT IN (SELECT train_id FROM ";
 		where_sentence.insert({ "train_id",repitive_train_id.
 			append(getTableName(requirement.start_cities[now_index],UserRequirementNamespace::HSRC)).append(" WHERE arrival_city=").
 			append(InitMySQL::toSQLString(requirement.arrive_cities[now_index]).append(")")) });
 
-		int minute_of_all = requirement.distances[now_index] / 800.0*60.0*0.65;
+		int minute_of_all = requirement.distances[now_index] / 800.0 * 60.0 * 0.65;
 		int hour = minute_of_all / 60;
 		int minute = minute_of_all % 60;
-		string cost_time=to_string(hour).append("小时").append(to_string(minute)).append("分钟");
+		string cost_time = to_string(hour).append("小时").append(to_string(minute)).append("分钟");
 		where_sentence.insert({ "cost_time",cost_time });
 	}
 	return where_sentence;
 }
 
-unordered_map<string, string> GetRoute::getWhereSentenceKeyValueOfSecondRouteOfTrans(int now_index,Vehicle* vehicle, UserRequirementNamespace::VehicleTypeEnum vehicle_type)
+unordered_map<string, string> GetRoute::getWhereSentenceKeyValueOfSecondRouteOfTrans(int now_index, Vehicle* vehicle, UserRequirementNamespace::VehicleTypeEnum vehicle_type)
 {
 	unordered_map<string, string> where_sentence;
 	if (this->requirement.transitType[now_index] == UserRequirementNamespace::FIX_TRANS)
@@ -522,13 +585,13 @@ unordered_map<string, string> GetRoute::getWhereSentenceKeyValueOfSecondRouteOfT
 
 	where_sentence.insert({ "arrival_city",requirement.arrive_cities[now_index] });
 	where_sentence.insert({ "start_time",vehicle->get_arrival_time() });
-	if (requirement.arrive_time.format != 0)
+	if (requirement.arrive_time[now_index].format != 0)
 	{
-		if (requirement.start_time.day < requirement.arrive_time.day)
+		if (requirement.start_time[now_index].day < requirement.arrive_time[now_index].day)
 		{
-			requirement.arrive_time.hour += (requirement.arrive_time.day - requirement.start_time.day) * 24;
+			requirement.arrive_time[now_index].hour += (requirement.arrive_time[now_index].day - requirement.start_time[now_index].day) * 24;
 		}
-		where_sentence.insert({ "arrival_time",requirement.arrive_time.myTimeToStringByInt(HH_MM) });
+		where_sentence.insert({ "arrival_time",requirement.arrive_time[now_index].myTimeToStringByInt(HH_MM) });
 	}
 	where_sentence.insert({ "mileage",to_string(requirement.distances[now_index] * 0.65) });//火车
 

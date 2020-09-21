@@ -1,12 +1,10 @@
 #ifndef ROUTERESULT_H
 #define ROUTERESULT_H
-
-
+#include"route.h"
 class RouteResult
 {
 public:
-	static char* remark;
-	static char* error;
+	Route** route;
 };
 
 #endif // !ROUTERESULT_H

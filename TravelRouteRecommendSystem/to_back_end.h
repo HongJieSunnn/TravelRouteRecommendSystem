@@ -4,7 +4,6 @@
 #include"user_requirement.h"
 #include"get_route.h"
 #include"my_exception.h"
-#include"error.h"
 /*
 获取推荐路线函数 C#调用该函数
 * requirement:C#传过来的需求
@@ -24,7 +23,7 @@ extern "C" __declspec(dllexport)void GetRecommendations(UserRequirementFromCShar
 获取一组城市推荐路线函数 C#调用该函数
 * 
 */
-extern "C" __declspec(dllexport)void GetRecommendationsOneGroup(UserRequirementFromCSharp requirement, RouteResult & routes, Error& error, char*& remark, int& first_route_size, int*& first_route_of_one_size_array);
+extern "C" __declspec(dllexport)void GetRecommendationsOneGroup(UserRequirementFromCSharp requirement, RouteResult* & routes, int& level,char*& error_code,char*& error, char*& remark, int& first_route_size, int*& first_route_of_one_size_array);
 /*
 释放空间 
 * 参数看上一个
@@ -32,5 +31,5 @@ extern "C" __declspec(dllexport)void GetRecommendationsOneGroup(UserRequirementF
 */
 extern "C" __declspec(dllexport)void FreeMemory(RouteResult * &routes, int weight_size, int first_route_size, int second_route_size);
 
-extern "C" __declspec(dllexport)void FreeMemoryOneGroup(RouteResult &routes, int first_route_size);
+extern "C" __declspec(dllexport)void FreeMemoryOneGroup(RouteResult* &routes, int first_route_size);
 #endif // !TOBACKEND_H

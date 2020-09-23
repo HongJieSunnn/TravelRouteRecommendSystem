@@ -2,7 +2,7 @@
 #define ROUTE_H
 #include"vehicle.h"
 #include"my_exception.h"
-class Route
+struct Route
 {
 public:
 	char* vehicle_type;
@@ -26,5 +26,5 @@ public:
 	char* business_seat_price;
 	char* mileage;
 };
-Route vehicleToRoute(Vehicle* vehicle);
+void vehicleToRoute(Vehicle* vehicle,Route& route);
 #endif // !ROUTE_H

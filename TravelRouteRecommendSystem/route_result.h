@@ -1,10 +1,10 @@
 #ifndef ROUTERESULT_H
 #define ROUTERESULT_H
 #include"route.h"
-class RouteResult
+struct RouteResult
 {
 public:
-	Route** route;
+	Route* route;
 };
 
 #endif // !ROUTERESULT_H

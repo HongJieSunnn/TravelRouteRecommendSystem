@@ -115,7 +115,7 @@ void GetRecommendations(UserRequirementFromCSharp requirement, RouteResult*& rou
 	}
 }
 
-void GetRecommendationsOneGroup(UserRequirementFromCSharp requirement, RouteResult& routes, Error& error, char*& remark, int& first_route_size, int*& first_route_of_one_size_array)
+void GetRecommendationsOneGroup(UserRequirementFromCSharp requirement, RouteResult*& routes, int& level, char*& error_code, char*& error, char*& remark, int& first_route_size, int*& first_route_of_one_size_array)
 {
 	try
 	{
@@ -164,25 +164,27 @@ void GetRecommendationsOneGroup(UserRequirementFromCSharp requirement, RouteResu
 		{
 			first_route_of_one_size_array[i] = get_route.getWeights()[0][i].size();
 		}
+		return;
 	}
 	catch (const MyException& exc)
 	{
-		error.level = exc.getLevel();
-		error.error_code = (char*)exc.getErrorCode().c_str();
-		error.what = (char*)exc.what();
+		level = exc.getLevel();
+		auto error_code = exc.getErrorCode();
+		error_code = (char*)error_code.c_str();
+		error = (char*)exc.what();
 	}
 	catch (const std::exception& exc)
 	{
-		error.level = 4;
-		error.error_code = (char*)"OTHER_EXCEPTIONS";
-		error.what = (char*)exc.what();
+		level = 4;
+		error_code = (char*)"OTHER_EXCEPTIONS";
+		error = (char*)exc.what();
 		return;
 	}
 }
 
 void FreeMemory(RouteResult*& routes, int weight_size, int first_route_size, int second_route_size)
 {
-	for (int i = 0; i < first_route_size; i++)
+	/*for (int i = 0; i < first_route_size; i++)
 	{
 		delete[] routes[0].route[i];
 	}
@@ -190,14 +192,14 @@ void FreeMemory(RouteResult*& routes, int weight_size, int first_route_size, int
 	{
 		delete[] routes[1].route[i];
 	}
-	delete[] routes;
+	delete[] routes;*/
 }
 
-void FreeMemoryOneGroup(RouteResult& routes, int first_route_size)
+void FreeMemoryOneGroup(RouteResult*& routes, int first_route_size)
 {
 	for (int i = 0; i < first_route_size; i++)
 	{
-		delete[] routes.route[i];
+		delete[] routes[i].route;
 	}
-	delete routes.route;
+	delete routes;
 }

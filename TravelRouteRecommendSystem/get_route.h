@@ -97,7 +97,7 @@ namespace GetRouteNameSpace
 
 	auto getTimeOfVehicleOneRoute = [](vector<Vehicle*> route)->double
 	{
-		int size = route.size();
+		auto size = route.size();
 		string type;
 		//直达
 		if (size == 1)
@@ -133,7 +133,7 @@ namespace GetRouteNameSpace
 			if (type == AIRPLANE_TYPE)
 			{
 				string ticket_price = route[i]->get_ticket_price().substr(1);
-				int index_of_QI = ticket_price.find("起");
+				auto index_of_QI = ticket_price.find("起");
 				ticket_price = ticket_price.substr(0, index_of_QI);
 				string discount_rate_str = route[i]->get_discount().substr(6,3);
 				double discount_rate = atof(discount_rate_str.c_str());
@@ -162,6 +162,17 @@ namespace GetRouteNameSpace
 			time1 *= (times / 2);
 		}
 
+		int start_time_hour1 = MyTime::stringToMyTime(route1[0]->get_start_time(), HH_MM).hour;
+		int start_time_hour2 = MyTime::stringToMyTime(route2[0]->get_start_time(), HH_MM).hour;
+		if (start_time_hour1 >= 7 && start_time_hour1 <= 16)//如果出发时间在8点到16点之间 这个点出发比较好 那么我们把time1减去自身的五分之一 从而获得更高的权 如果time2也减去自身五分之一 那么大小仍然和没减一样
+		{
+			time1 -= time1 / 5;
+		}
+		if (start_time_hour2 >= 7 && start_time_hour2 <= 16)
+		{
+			time2 -= time2 / 5;
+		}
+
 		if (time1 < time2)
 			return true;
 		return false;
@@ -171,6 +182,17 @@ namespace GetRouteNameSpace
 	{
 		double time1 = getTimeOfVehicleOneRoute(route1);
 		double time2 = getTimeOfVehicleOneRoute(route2);
+
+		int start_time_hour1 = MyTime::stringToMyTime(route1[0]->get_start_time(), HH_MM).hour;
+		int start_time_hour2 = MyTime::stringToMyTime(route2[0]->get_start_time(), HH_MM).hour;
+		if (start_time_hour1 >= 7 && start_time_hour1 <= 16)//如果出发时间在8点到16点之间 这个点出发比较好 那么我们把time1减去自身的五分之一 从而获得更高的权 如果time2也减去自身五分之一 那么大小仍然和没减一样
+		{
+			time1 -= time1 / 5;
+		}
+		if (start_time_hour2 >= 7 && start_time_hour2 <= 16)
+		{
+			time2 -= time2 / 5;
+		}
 
 		double price1 = getPriceOfVehicleOneRoute(route1);
 		double price2 = getPriceOfVehicleOneRoute(route2);
@@ -182,6 +204,16 @@ namespace GetRouteNameSpace
 	{
 		double time1 = getTimeOfVehicleOneRoute(route1);
 		double time2 = getTimeOfVehicleOneRoute(route2);
+		int start_time_hour1 = MyTime::stringToMyTime(route1[0]->get_start_time(), HH_MM).hour;
+		int start_time_hour2 = MyTime::stringToMyTime(route2[0]->get_start_time(), HH_MM).hour;
+		if (start_time_hour1 >= 7 && start_time_hour1 <= 16)//如果出发时间在8点到16点之间 这个点出发比较好 那么我们把time1减去自身的五分之一 从而获得更高的权 如果time2也减去自身五分之一 那么大小仍然和没减一样
+		{
+			time1 -= time1 / 5;
+		}
+		if (start_time_hour2 >= 7 && start_time_hour2 <= 16)
+		{
+			time2 -= time2 / 5;
+		}
 
 		return time1 < time2;
 	};
@@ -347,7 +379,7 @@ public:
 	返回线路结果数组 一组城市
 	* route_result:RouteResult 用来“返回”RouteResult数组
 	*/
-	GetRouteNameSpace::GetRouteResultStatue getRouteResultsOneGroup(RouteResult& route_result);
+	GetRouteNameSpace::GetRouteResultStatue getRouteResultsOneGroup(RouteResult*& route_result);
 
 	/*
 		返回weighs 因为all_transit要新建两个对象 从而也就是往对应的weights中写 我直接get写好的 然后拼一起就好了

@@ -18,7 +18,7 @@ public:
 	MyException(int level, std::string error_code, std::string what) :exception(what.c_str())
 	{
 		this->level_ = level;
-		this->error_code_ = error_code_;
+		this->error_code_ = error_code;
 	}
 
 	int getLevel() const;

@@ -24,6 +24,11 @@ public:
 	MyTime()
 	{
 		this->format = 0;//为0说明，空的，也就是没有给出时间
+		this->year = 0;
+		this->month = 0;
+		this->day = 0;
+		this->hour = 0;
+		this->minute = 0;
 	}
 	int year;
 	int month;

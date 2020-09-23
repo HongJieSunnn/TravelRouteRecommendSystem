@@ -106,7 +106,7 @@ GetRouteResultStatue GetRoute::getRouteResults(RouteResult*& route_result)
 			throw MyException(3, "NO_RECOMMENDATION_ROUTES", error.append(to_string(i + 1)).append("段路没有结果)").c_str());
 		}
 	}
-	route_result = new RouteResult[weights.size()];
+	/*route_result = new RouteResult[weights.size()];
 	for (int i = 0; i < weights.size(); i++)
 	{
 		route_result[i].route = new Route*[weights[i].size()];
@@ -115,13 +115,13 @@ GetRouteResultStatue GetRoute::getRouteResults(RouteResult*& route_result)
 			route_result[i].route[j] = new Route [weights[i][j].size()];
 			for (int k = 0; k < weights[i][j].size(); k++)
 			{
-				route_result[i].route[j][k]=vehicleToRoute(this->weights[i][j][k]);
+				vehicleToRoute(this->weights[i][j][k], route_result[i].route[j][k]);
 			}
 		}
-	}
+	}*/
 }
 
-GetRouteNameSpace::GetRouteResultStatue GetRoute::getRouteResultsOneGroup(RouteResult& route_result)
+GetRouteNameSpace::GetRouteResultStatue GetRoute::getRouteResultsOneGroup(RouteResult*& route_result)
 {
 	getVechileInfor();
 
@@ -129,13 +129,23 @@ GetRouteNameSpace::GetRouteResultStatue GetRoute::getRouteResultsOneGroup(RouteR
 	{
 		throw MyException(1, "SORT_WEIGHTS_FAILED", "按权排序线路时出错");
 	}
-	route_result.route = new Route*[this->weights[0].size()];
+
+	int size_of_all_routes = 0;
 	for (int i = 0; i < this->weights[0].size(); i++)
 	{
-		route_result.route[i] = new Route[this->weights[0][i].size()];
+		size_of_all_routes += weights[0][i].size();
+	}
+
+	route_result = new RouteResult[size_of_all_routes];
+	int write_index = 0;
+
+	for (int i = 0; i < this->weights[0].size(); i++)
+	{
 		for (int j = 0; j < this->weights[0][i].size(); j++)
 		{
-			route_result.route[i][j] = vehicleToRoute(this->weights[0][i][j]);
+			route_result[write_index].route = new Route[1];
+			vehicleToRoute(this->weights[0][i][j], route_result[write_index].route[0]);
+			write_index++;
 		}
 	}
 	return GetRouteResultStatue::GET_ROUTE_RESULT_SUCCEED;
@@ -266,7 +276,7 @@ GetRouteNameSpace::GetDirectVehicleStatue GetRoute::getDirectVehicleInfor(int no
 		MYSQL_ROW row = NULL;
 		row = mysql_fetch_row(res);
 		vector<Vehicle*> vehicle(1);
-		vector<vector<Vehicle*>> temp_weights = vector<vector<Vehicle*>>(rows_count>10?10:rows_count, vector<Vehicle*>(1));
+		vector<vector<Vehicle*>> temp_weights = vector<vector<Vehicle*>>(rows_count>15?15:rows_count, vector<Vehicle*>(1));
 		int j = 0;
 		while (row != NULL)
 		{
